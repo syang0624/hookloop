@@ -54,7 +54,9 @@ function LiveDashboard({ batchId }: { batchId: string }) {
   const phaseLabel = phase ? PHASE_LABELS[phase] ?? phase : undefined;
   const isFailed = status?.status === "failed";
   const isComplete = phase === "complete";
-  const productId = variants?.[0]?.productId;
+  // Prefer the run's productId (available immediately) so the week stack shows
+  // even before this batch has generated any variants. Fall back to variants.
+  const productId = status?.productId ?? variants?.[0]?.productId;
 
   const weeks = useQuery(
     api.experiments.weeksByProduct,

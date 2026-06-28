@@ -147,7 +147,9 @@ export const getStatus = query({
       progress = 0.1;
     }
 
-    return { status: run.status, phase, progress, error: run.error ?? null };
+    // productId is returned so the dashboard can resolve the campaign's other
+    // weeks immediately — without waiting for this batch's variants to exist.
+    return { status: run.status, phase, progress, error: run.error ?? null, productId: run.productId };
   },
 });
 
