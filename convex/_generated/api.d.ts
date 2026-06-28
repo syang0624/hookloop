@@ -15,6 +15,7 @@ import type * as metrics from "../metrics.js";
 import type * as products from "../products.js";
 import type * as simulator from "../simulator.js";
 import type * as variants from "../variants.js";
+import type * as video from "../video.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   simulator: typeof simulator;
   variants: typeof variants;
+  video: typeof video;
 }>;
 
 /**
