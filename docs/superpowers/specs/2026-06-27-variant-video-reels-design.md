@@ -33,6 +33,20 @@ leads the demo, and video generation never blocks or gates it.
 - **Async, non-blocking.** Generation runs in parallel with the rest of the loop
   and fills the UI reactively. A failed/timed-out clip degrades gracefully.
 
+## Feedback-driven improvement (each loop)
+
+The video generation is part of the self-improving loop, not a one-off render.
+On batch 2+, the prior batch's Analyst `nextBatchBrief` (which already steers the
+Strategist via N3) is **also threaded into each variant's video prompt** as
+explicit creative direction. So the *visual creative* — not just the variant
+metadata — improves every loop: batch 1 reels are baseline; each later batch's
+reels are directed by what actually won (e.g. "lean into the UGC/testimonial
+visual style that beat CAC last batch").
+
+Threading: `runStrategist` (already fetches the brief) → passes `videoFeedback`
+to `runGenerator` → passes `feedback` to each `generateVariantVideo` →
+`buildVideoPrompt(variant, feedback)` appends a creative-direction clause.
+
 ## Architecture
 
 ```

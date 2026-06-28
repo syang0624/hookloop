@@ -549,6 +549,28 @@ git commit -m "video: update scope + document video reel contract for Steven"
 
 ---
 
+## Addendum: feedback-driven video (each loop)
+
+Threads the prior batch's Analyst `nextBatchBrief` into the video prompt so reels
+improve every loop. Deltas to the tasks above:
+
+- **Task 1 — `buildVideoPrompt`** gains an optional second param:
+  `buildVideoPrompt(variant: VariantPromptInput, feedback?: string): string`.
+  When `feedback` is non-empty, append:
+  `` `Creative direction from what performed best in the previous batch — lean the visual style and message into this: "${feedback}".` ``
+  (Add a test case: a prompt built with feedback differs from one without and contains the feedback text.)
+
+- **Task 4 — `generateVariantVideo`** args gain `feedback: v.optional(v.string())`;
+  pass it through: `buildVideoPrompt(variant, args.feedback)`.
+
+- **Task 5 — threading:**
+  - `runStrategist` already computes `priorBrief` (the prior `nextBatchBrief`). Pass it to the generator:
+    add `videoFeedback: priorBrief` to the `internal.agents.runGenerator` schedule call.
+  - `runGenerator` args gain `videoFeedback: v.optional(v.string())`; forward it to each job:
+    `ctx.scheduler.runAfter(0, internal.video.generateVariantVideo, { variantId, feedback: args.videoFeedback })`.
+
+Batch 1 has no prior brief (`feedback` undefined → baseline prompt); batch 2+ reels are feedback-directed.
+
 ## Self-Review
 
 **Spec coverage:** provider+adapter (T2), async flow / scheduler / poll / storage (T4), generator hook non-blocking (T5), schema fields (T3), prompt builder (T1), preflight + fallback (T4/T6), error handling per-variant (T4), cost kill switch `VIDEO_ENABLED` (T4), Steven contract + CLAUDE.md scope flip (T7), verification (T6). All spec sections map to a task.
