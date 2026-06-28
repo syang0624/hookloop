@@ -31,11 +31,13 @@ export default function VariantCard({
   metrics,
   revealDelay = 0,
   compact = false,
+  cachedVideoPath,
 }: {
   variant: Variant;
   metrics: Metric[];
   revealDelay?: number;
   compact?: boolean;
+  cachedVideoPath?: string;
 }) {
   const sorted = metrics.slice().sort((a, b) => a.day - b.day);
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
@@ -67,8 +69,17 @@ export default function VariantCard({
         <StatusBadge status={status} />
       </div>
 
-      {/* Video reel */}
-      {variant.videoStatus === "ready" && variant.videoUrl ? (
+      {/* Video reel — prefer cached local file, then Convex URL, then preview */}
+      {cachedVideoPath ? (
+        <video
+          src={cachedVideoPath}
+          className="w-full rounded-[14px] mb-3 aspect-[9/16] object-cover bg-background"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      ) : variant.videoStatus === "ready" && variant.videoUrl ? (
         <video
           src={variant.videoUrl}
           className="w-full rounded-[14px] mb-3 aspect-[9/16] object-cover bg-background"

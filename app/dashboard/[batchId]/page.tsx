@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
+import { CACHED_BATCH_ID } from "@/lib/mockData";
 import CampaignTimeline from "@/components/CampaignTimeline";
 import AgentReasoningPanel from "@/components/AgentReasoningPanel";
 import BudgetAllocator from "@/components/BudgetAllocator";
@@ -50,6 +51,11 @@ function LiveDashboard({ batchId }: { batchId: string }) {
   const isFailed = status?.status === "failed";
   const isComplete = phase === "complete";
   const productId = variants?.[0]?.productId;
+
+  // Build cached reel paths for the Coca-Cola demo batch
+  const cachedReelPaths = batchId === CACHED_BATCH_ID && variants
+    ? Object.fromEntries(variants.map((v, i) => [v._id as string, `/reels/reel_${i + 1}.mp4`]))
+    : undefined;
 
   async function handleNextBatch() {
     if (!productId || launchingNext) return;
@@ -162,6 +168,7 @@ function LiveDashboard({ batchId }: { batchId: string }) {
                 metrics={metrics}
                 allocations={allocations as Array<{ day: number; variantId: string; share: number; dailyBudget: number; status: "scale" | "explore" | "kill" }>}
                 analystText={analystText}
+                cachedReelPaths={cachedReelPaths}
               />
             </BentoCard>
           ) : (
