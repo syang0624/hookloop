@@ -55,9 +55,12 @@ export default function WeeklyReport({
       <div className="space-y-2">
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/30">Hypotheses & Verdicts</h3>
         {hypotheses.map((h) => {
-          const verdict = analystData?.hypothesisVerdict.find(
-            (vd) => vd.hypothesis.trim().slice(0, 40) === h.text.trim().slice(0, 40),
-          ) ?? analystData?.hypothesisVerdict[hypotheses.indexOf(h)];
+          const idx = hypotheses.indexOf(h);
+          const verdict =
+            analystData?.hypothesisVerdict[idx] ??
+            analystData?.hypothesisVerdict.find(
+              (vd) => vd.hypothesis.trim().slice(0, 40) === h.text.trim().slice(0, 40),
+            );
           return (
             <div key={h._id} className="bg-background rounded-[12px] p-3">
               <div className="flex items-start gap-2">
