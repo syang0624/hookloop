@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import type { Variant, Metric } from "@/lib/types";
 
 const COLORS = [
-  "#16a34a", "#2563eb", "#9333ea", "#ea580c",
-  "#0891b2", "#4f46e5", "#c026d3", "#65a30d",
+  "#007AFF", "#34C759", "#AF52DE", "#FF9500",
+  "#00C7BE", "#5856D6", "#FF2D55", "#5AC8FA",
 ];
 
 type Allocation = {
@@ -80,7 +80,7 @@ export default function BudgetAllocator({
   return (
     <div>
       {/* Stacked bar */}
-      <div className="flex h-8 rounded-lg overflow-hidden mb-3">
+      <div className="flex h-10 rounded-full overflow-hidden mb-4 bg-background">
         {allocations.map((a, i) =>
           a.killed ? null : (
             <div
@@ -94,7 +94,7 @@ export default function BudgetAllocator({
               title={`${a.hookType}/${a.voice}: $${a.amount} (CAC $${a.cac.toFixed(0)})`}
             >
               {a.share > 0.08 && (
-                <span className="text-[10px] text-white font-medium truncate px-1">
+                <span className="text-[11px] text-white font-semibold truncate px-1">
                   ${a.amount}
                 </span>
               )}
@@ -104,29 +104,29 @@ export default function BudgetAllocator({
       </div>
 
       {/* Legend */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {activeAllocations.map((a) => {
           const origIndex = allocations.indexOf(a);
           return (
-            <div key={a.variantId} className="flex items-center gap-2 text-xs">
+            <div key={a.variantId} className="flex items-center gap-2.5 text-[12px]">
               <span
-                className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                className="h-3 w-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS[origIndex % COLORS.length] }}
               />
-              <span className="text-gray-600 truncate">
+              <span className="text-foreground/60 truncate">
                 {a.hookType}/{a.voice}
               </span>
-              <span className="ml-auto font-medium text-gray-800">
+              <span className="ml-auto font-semibold text-foreground">
                 ${a.amount}
               </span>
-              <span className="text-gray-400 w-16 text-right">
+              <span className="text-foreground/30 w-14 text-right font-medium">
                 {(a.share * 100).toFixed(0)}%
               </span>
             </div>
           );
         })}
         {killedCount > 0 && (
-          <p className="text-[10px] text-red-400 mt-1">
+          <p className="text-[11px] text-red-400 font-medium mt-2">
             {killedCount} variant{killedCount > 1 ? "s" : ""} killed (budget reallocated)
           </p>
         )}

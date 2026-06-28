@@ -102,19 +102,19 @@ export default function ProductInputForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-10">
       {/* Dev helper */}
       <button
         type="button"
         onClick={prefillReachly}
-        className="text-xs text-blue-600 underline"
+        className="text-[13px] text-primary font-medium hover:text-primary/80 transition-colors"
       >
         Prefill with Reachly sample data
       </button>
 
       {/* Group 1: Product Details */}
-      <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold">Product Details</legend>
+      <fieldset className="space-y-5">
+        <legend className="font-display text-lg font-bold text-foreground">Product Details</legend>
 
         <Field label="Product Name" error={errors.name}>
           <input
@@ -179,7 +179,7 @@ export default function ProductInputForm() {
 
       {/* Group 2: Budget */}
       <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold">Budget</legend>
+        <legend className="font-display text-lg font-bold text-foreground">Budget</legend>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Daily Budget ($)" error={errors.dailyBudget}>
@@ -227,7 +227,7 @@ export default function ProductInputForm() {
 
       {/* Group 3: Existing Creative */}
       <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold">Existing Creative</legend>
+        <legend className="font-display text-lg font-bold text-foreground">Existing Creative</legend>
         <p className="text-sm text-gray-500">
           Describe any past ads, reels, or creative assets you have. File upload coming soon.
         </p>
@@ -240,19 +240,26 @@ export default function ProductInputForm() {
 
       {/* Group 4: Experiment Goal */}
       <fieldset className="space-y-3">
-        <legend className="text-lg font-semibold">Experiment Goal</legend>
+        <legend className="font-display text-lg font-bold text-foreground">Experiment Goal</legend>
 
         {GOALS.map((g) => (
-          <label key={g.value} className="flex items-center gap-3 cursor-pointer">
+          <label
+            key={g.value}
+            className={`flex items-center gap-3 cursor-pointer rounded-[14px] p-3.5 transition-all duration-200 ${
+              form.goal === g.value
+                ? "bg-primary/10 ring-2 ring-primary"
+                : "bg-background hover:bg-background/80"
+            }`}
+          >
             <input
               type="radio"
               name="goal"
               value={g.value}
               checked={form.goal === g.value}
               onChange={(e) => update("goal", e.target.value)}
-              className="accent-black"
+              className="accent-primary"
             />
-            <span className="text-sm">{g.label}</span>
+            <span className="text-[14px] font-medium text-foreground">{g.label}</span>
           </label>
         ))}
       </fieldset>
@@ -260,7 +267,7 @@ export default function ProductInputForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-lg bg-black text-white py-3 text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-[14px] bg-primary text-white py-3.5 text-[15px] font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-bento"
       >
         {submitting ? "Launching experiment..." : "Launch Experiment"}
       </button>
@@ -279,17 +286,17 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1">
+      <label className="block text-[13px] font-semibold text-foreground/60 mb-1.5">
         {label}
       </label>
       {children}
-      {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
+      {error && <p className="text-red-500 text-[12px] font-medium mt-1.5">{error}</p>}
     </div>
   );
 }
 
 function inputClass(error?: string) {
-  return `w-full rounded-md border px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-black/20 ${
-    error ? "border-red-400" : "border-gray-300"
+  return `w-full rounded-[12px] border-none bg-background px-4 py-3 text-[14px] text-foreground outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/30 placeholder:text-foreground/30 ${
+    error ? "ring-2 ring-red-400" : ""
   }`;
 }

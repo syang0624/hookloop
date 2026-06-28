@@ -2,14 +2,14 @@ import type { Variant, Metric } from "@/lib/types";
 
 function StatusBadge({ status }: { status: "winning" | "running" | "killed" }) {
   const styles = {
-    winning: "bg-green-100 text-green-700",
-    running: "bg-blue-100 text-blue-700",
-    killed: "bg-red-100 text-red-700",
+    winning: "bg-green-500/10 text-green-600",
+    running: "bg-primary/10 text-primary",
+    killed: "bg-red-500/10 text-red-500",
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${styles[status]}`}>
       {status === "running" && (
-        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
       )}
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
@@ -18,9 +18,9 @@ function StatusBadge({ status }: { status: "winning" | "running" | "killed" }) {
 
 function DnaPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wide text-gray-400">{label}</span>
-      <span className="text-xs text-gray-700">{value}</span>
+    <div className="bg-background rounded-[10px] px-2.5 py-1.5 text-center">
+      <span className="block text-[10px] font-semibold uppercase tracking-wide text-foreground/35">{label}</span>
+      <span className="block text-[12px] font-medium text-foreground/70 mt-0.5">{value}</span>
     </div>
   );
 }
@@ -40,21 +40,21 @@ export default function VariantCard({
 
   return (
     <div
-      className={`rounded-xl border p-4 text-sm transition-shadow hover:shadow-md ${
+      className={`rounded-[20px] p-5 text-sm transition-all duration-300 hover:shadow-bento ${
         isDead
-          ? "opacity-60 border-red-200 bg-red-50/50"
+          ? "opacity-50 bg-red-50"
           : isWinning
-            ? "border-green-200 bg-green-50/30 ring-1 ring-green-200"
-            : "border-gray-200 bg-white"
+            ? "bg-green-50 ring-2 ring-green-400/30"
+            : "bg-background"
       }`}
     >
       {/* Header: hook type + status */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-gray-900 text-white px-2 py-0.5 text-xs font-medium">
+          <span className="rounded-full bg-foreground text-card px-3 py-1 text-[11px] font-semibold">
             {variant.hookType}
           </span>
-          <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+          <span className="rounded-full bg-foreground/5 px-3 py-1 text-[11px] text-foreground/50 font-medium">
             {variant.scriptType}
           </span>
         </div>
@@ -62,17 +62,17 @@ export default function VariantCard({
       </div>
 
       {/* Script */}
-      <p className="text-gray-700 text-xs leading-relaxed line-clamp-3 mb-3">
+      <p className="text-foreground/70 text-[13px] leading-relaxed line-clamp-3 mb-3">
         {variant.script}
       </p>
 
       {/* Hypothesis */}
-      <p className="text-[10px] text-gray-400 italic mb-3 line-clamp-1">
+      <p className="text-[11px] text-foreground/35 italic mb-4 line-clamp-1">
         Hypothesis: {variant.hypothesis}
       </p>
 
       {/* DNA grid */}
-      <div className="grid grid-cols-5 gap-2 mb-3 pb-3 border-b border-gray-100">
+      <div className="grid grid-cols-5 gap-1.5 mb-4">
         <DnaPill label="Voice" value={variant.voice} />
         <DnaPill label="Music" value={variant.music} />
         <DnaPill label="Pacing" value={variant.pacing} />
@@ -82,7 +82,7 @@ export default function VariantCard({
 
       {/* Live metrics */}
       {latest && latest.impressions > 0 ? (
-        <div className="grid grid-cols-4 gap-2 text-xs mb-3">
+        <div className="grid grid-cols-4 gap-2 text-xs mb-4">
           <MetricCell label="CPC" value={`$${latest.cpc.toFixed(2)}`} />
           <MetricCell
             label="CAC"
@@ -93,15 +93,13 @@ export default function VariantCard({
           <MetricCell label="CVR" value={`${(latest.cvr * 100).toFixed(1)}%`} />
         </div>
       ) : isDead ? (
-        <p className="text-xs text-red-400 mb-3">No impressions — variant killed</p>
+        <p className="text-[12px] text-red-400 mb-4">No impressions — variant killed</p>
       ) : null}
 
       {/* Kill/scale rules */}
-      <div className="flex gap-3 text-[10px] text-gray-400">
-        <span title={variant.killRule}>Kill: {variant.killRule}</span>
-      </div>
-      <div className="text-[10px] text-gray-400 mt-0.5">
-        <span title={variant.scaleRule}>Scale: {variant.scaleRule}</span>
+      <div className="text-[11px] text-foreground/30 space-y-0.5">
+        <p>Kill: {variant.killRule}</p>
+        <p>Scale: {variant.scaleRule}</p>
       </div>
     </div>
   );
@@ -118,14 +116,14 @@ function MetricCell({
 }) {
   const color =
     highlight === "green"
-      ? "text-green-700 font-semibold"
+      ? "text-green-600 font-bold"
       : highlight === "red"
-        ? "text-red-600 font-semibold"
-        : "text-gray-800 font-medium";
+        ? "text-red-500 font-bold"
+        : "text-foreground font-semibold";
   return (
     <div>
-      <span className="block text-[10px] uppercase tracking-wide text-gray-400">{label}</span>
-      <span className={color}>{value}</span>
+      <span className="block text-[10px] font-semibold uppercase tracking-wide text-foreground/30">{label}</span>
+      <span className={`text-[13px] ${color}`}>{value}</span>
     </div>
   );
 }

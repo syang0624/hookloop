@@ -70,13 +70,15 @@ export default function DNAHeatmap({
   const maxCac = allCacs.length > 0 ? Math.max(...allCacs) : 100;
 
   function cacToColor(cac: number): string {
-    if (cac === 0) return "#f3f4f6"; // empty cell
+    if (cac === 0) return "#F2F2F7"; // empty cell — matches bg
     const t = maxCac > minCac ? (cac - minCac) / (maxCac - minCac) : 0;
-    // Green (low CAC) -> Yellow -> Red (high CAC)
-    const r = Math.round(t < 0.5 ? t * 2 * 220 : 220);
-    const g = Math.round(t < 0.5 ? 180 : 180 - (t - 0.5) * 2 * 140);
-    const b = Math.round(40);
-    return `rgb(${r}, ${g}, ${b})`;
+    // Green (low CAC) -> Yellow -> Red (high CAC) — iOS-inspired palette
+    if (t < 0.5) {
+      const s = t * 2;
+      return `rgb(${Math.round(52 + s * 203)}, ${Math.round(199 - s * 50)}, ${Math.round(89 - s * 39)})`;
+    }
+    const s = (t - 0.5) * 2;
+    return `rgb(${Math.round(255 - s * 0)}, ${Math.round(149 - s * 90)}, ${Math.round(50 - s * 2)})`;
   }
 
   const cellW = 90;
@@ -139,7 +141,7 @@ export default function DNAHeatmap({
                       y={labelH + ri * cellH + 2}
                       width={cellW - 4}
                       height={cellH - 4}
-                      rx={6}
+                      rx={12}
                       fill={cacToColor(cac)}
                       stroke={isHovered ? "#111" : "transparent"}
                       strokeWidth={isHovered ? 2 : 0}
@@ -165,25 +167,23 @@ export default function DNAHeatmap({
 
       {/* Hover tooltip */}
       {hovered !== null && hoveredCell && (
-        <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded-md p-2">
-          <span className="font-medium">{hookTypes[hovered.row]}</span>
+        <div className="mt-3 text-[12px] text-foreground/60 bg-background rounded-[14px] p-3.5">
+          <span className="font-semibold text-foreground">{hookTypes[hovered.row]}</span>
           {" x "}
-          <span className="font-medium">{voiceTypes[hovered.col]}</span>
-          {" — "}
-          Avg CAC: <span className="font-semibold">${hoveredCell.avgCac.toFixed(2)}</span>
-          {" | "}
-          {hoveredCell.count} data points
-          {" | "}
-          ${hoveredCell.totalSpend.toFixed(0)} spend
-          {" | "}
-          {hoveredCell.totalConversions} conversions
+          <span className="font-semibold text-foreground">{voiceTypes[hovered.col]}</span>
+          <div className="flex gap-4 mt-2 text-[11px]">
+            <span>Avg CAC: <span className="font-bold text-foreground">${hoveredCell.avgCac.toFixed(2)}</span></span>
+            <span>{hoveredCell.count} data points</span>
+            <span>${hoveredCell.totalSpend.toFixed(0)} spend</span>
+            <span>{hoveredCell.totalConversions} conv.</span>
+          </div>
         </div>
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
+      <div className="flex items-center gap-3 mt-4 text-[11px] text-foreground/35 font-medium">
         <span>Low CAC</span>
-        <div className="flex h-2 w-24 rounded overflow-hidden">
+        <div className="flex h-2.5 w-28 rounded-full overflow-hidden">
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}

@@ -2,22 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #fafafa;
-  --foreground: #111111;
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: #000000;
+  background: #F2F2F7;
+  font-family: "SF Pro Text", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth transitions globally */
-* {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Custom scrollbar for reasoning panels */
+/* Custom scrollbar — thin and subtle */
 .overflow-y-auto::-webkit-scrollbar {
   width: 4px;
 }
@@ -25,9 +18,9 @@ body {
   background: transparent;
 }
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #D1D1D6;
   border-radius: 2px;
 }
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #AEAEB2;
 }

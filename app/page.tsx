@@ -2,41 +2,65 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      {/* Logo */}
-      <div className="mb-8">
-        <h1 className="text-5xl font-black tracking-tight">
-          Hook<span className="text-gray-400">Loop</span>
-        </h1>
-      </div>
+    <div className="min-h-screen bg-background p-6 md:p-10 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
+        {/* Bento grid layout */}
+        <div className="grid grid-cols-4 gap-4 md:gap-5">
+          {/* Hero card — 2x2 */}
+          <div className="col-span-4 md:col-span-2 row-span-2 bg-card rounded-bento shadow-bento p-8 md:p-10 flex flex-col justify-between min-h-[320px]">
+            <div>
+              <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+                Hook<span className="text-primary">Loop</span>
+              </h1>
+              <p className="mt-4 text-[15px] text-foreground/60 leading-relaxed max-w-sm">
+                The autonomous ad experimentation agent. Input your product, get
+                hypotheses, variants, simulated campaigns, and clear attribution.
+              </p>
+            </div>
+            <Link
+              href="/setup"
+              className="mt-8 inline-flex items-center justify-center rounded-[14px] bg-primary text-white px-7 py-3.5 text-[15px] font-semibold hover:bg-primary/90 transition-all duration-200 w-fit shadow-bento"
+            >
+              Start Experiment
+            </Link>
+          </div>
 
-      <p className="text-lg text-gray-500 mb-3 text-center max-w-lg leading-relaxed">
-        The autonomous ad experimentation agent.
-      </p>
-      <p className="text-sm text-gray-400 mb-10 text-center max-w-md">
-        Input your product. Get hypotheses, ad variants, simulated campaigns,
-        and clear attribution — in one loop.
-      </p>
+          {/* Stat card — 1x1 */}
+          <div className="col-span-2 md:col-span-1 bg-card rounded-bento shadow-bento p-6 flex flex-col justify-between min-h-[150px]">
+            <span className="text-[13px] font-semibold text-foreground/40 uppercase tracking-wide">Agents</span>
+            <div>
+              <p className="text-4xl font-bold font-display text-foreground">3</p>
+              <p className="text-[13px] text-foreground/50 mt-1">Strategist, Generator, Analyst</p>
+            </div>
+          </div>
 
-      <Link
-        href="/setup"
-        className="rounded-lg bg-gray-900 text-white px-8 py-3 text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm"
-      >
-        Start Experiment
-      </Link>
+          {/* Stat card — 1x1 */}
+          <div className="col-span-2 md:col-span-1 bg-card rounded-bento shadow-bento p-6 flex flex-col justify-between min-h-[150px]">
+            <span className="text-[13px] font-semibold text-foreground/40 uppercase tracking-wide">Variants</span>
+            <div>
+              <p className="text-4xl font-bold font-display text-foreground">8</p>
+              <p className="text-[13px] text-foreground/50 mt-1">Unique creative DNA combos</p>
+            </div>
+          </div>
 
-      <div className="mt-16 flex gap-8 text-xs text-gray-400">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-700 mb-1">3</p>
-          <p>AI Agents</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-700 mb-1">8</p>
-          <p>Ad Variants</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-700 mb-1">3</p>
-          <p>Day Simulation</p>
+          {/* Stat card — 1x1 */}
+          <div className="col-span-2 md:col-span-1 bg-card rounded-bento shadow-bento p-6 flex flex-col justify-between min-h-[150px]">
+            <span className="text-[13px] font-semibold text-foreground/40 uppercase tracking-wide">Simulation</span>
+            <div>
+              <p className="text-4xl font-bold font-display text-foreground">3</p>
+              <p className="text-[13px] text-foreground/50 mt-1">Day campaign with live bandit</p>
+            </div>
+          </div>
+
+          {/* Loop description card — 1x1 */}
+          <div className="col-span-2 md:col-span-1 bg-primary rounded-bento shadow-bento p-6 flex flex-col justify-between min-h-[150px]">
+            <span className="text-[13px] font-semibold text-white/60 uppercase tracking-wide">The Loop</span>
+            <div>
+              <p className="text-white text-[14px] font-medium leading-snug">
+                Hypothesize. Generate. Simulate. Analyze. Repeat.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

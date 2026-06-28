@@ -47,10 +47,10 @@ export default function AgentReasoningPanel({
   return (
     <div
       ref={containerRef}
-      className="text-xs text-gray-600 whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto"
+      className="text-[12px] text-foreground/60 whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto bg-background rounded-[16px] p-4"
     >
       {text.slice(0, charIndex)}
-      {!done && <span className="animate-pulse text-gray-400">|</span>}
+      {!done && <span className="animate-pulse text-primary">|</span>}
     </div>
   );
 }

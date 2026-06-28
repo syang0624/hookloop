@@ -15,9 +15,9 @@ import type { Metric, Variant } from "@/lib/types";
 
 type ChartMetric = "cac" | "cpc";
 
-const COLORS_GOOD = ["#16a34a", "#15803d", "#166534", "#14532d"];
-const COLORS_BAD = ["#dc2626", "#b91c1c", "#991b1b", "#7f1d1d"];
-const COLORS_NEUTRAL = ["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd", "#818cf8", "#60a5fa", "#38bdf8", "#22d3ee"];
+const COLORS_GOOD = ["#34C759", "#30B350", "#2CA048"];
+const COLORS_BAD = ["#FF3B30", "#E6352B", "#CC2F26"];
+const COLORS_NEUTRAL = ["#007AFF", "#5856D6", "#AF52DE", "#FF9500", "#00C7BE", "#5AC8FA", "#FF2D55", "#64D2FF"];
 
 export default function MetricsChart({
   metrics,
@@ -91,15 +91,15 @@ export default function MetricsChart({
 
   return (
     <div>
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-2 mb-4">
         {(["cac", "cpc"] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMetric(m)}
-            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
               metric === m
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-primary text-white shadow-bento"
+                : "bg-background text-foreground/50 hover:text-foreground/70"
             }`}
           >
             {m.toUpperCase()}
@@ -109,7 +109,7 @@ export default function MetricsChart({
 
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E5EA" />
           <XAxis dataKey="day" tick={{ fontSize: 11 }} />
           <YAxis
             tick={{ fontSize: 11 }}
@@ -119,8 +119,8 @@ export default function MetricsChart({
             content={({ active, payload, label }) => {
               if (!active || !payload) return null;
               return (
-                <div className="rounded-lg border bg-white p-3 shadow-lg text-xs">
-                  <p className="font-medium mb-2">{label}</p>
+                <div className="rounded-[16px] bg-card p-4 shadow-bento text-xs">
+                  <p className="font-semibold text-foreground mb-2">{label}</p>
                   {payload.map((entry) => {
                     const v = variantMap.get(entry.dataKey as string);
                     return (
