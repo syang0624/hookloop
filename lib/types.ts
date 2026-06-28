@@ -68,3 +68,5 @@ export type ExperimentRun = {
   status: "running" | "complete";
   startedAt: number;
 };
+
+export type ProductInput = Omit<Product, "_id" | "_creationTime">;
