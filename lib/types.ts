@@ -42,6 +42,10 @@ export type Variant = {
   budget: number;
   killRule: string;
   scaleRule: string;
+  videoStatus?: "pending" | "ready" | "failed";
+  videoUrl?: string;
+  videoJobId?: string;
+  videoError?: string;
 };
 
 export type Metric = {

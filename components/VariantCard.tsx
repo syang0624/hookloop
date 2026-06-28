@@ -61,6 +61,26 @@ export default function VariantCard({
         <StatusBadge status={status} />
       </div>
 
+      {/* Video reel */}
+      {variant.videoStatus === "ready" && variant.videoUrl ? (
+        <video
+          src={variant.videoUrl}
+          className="w-full rounded-[14px] mb-3 aspect-[9/16] object-cover bg-background"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      ) : variant.videoStatus === "pending" ? (
+        <div className="w-full aspect-[9/16] rounded-[14px] mb-3 bg-background animate-pulse flex items-center justify-center text-[12px] text-foreground/40">
+          generating reel...
+        </div>
+      ) : variant.videoStatus === "failed" ? (
+        <div className="w-full aspect-[9/16] rounded-[14px] mb-3 bg-background flex items-center justify-center text-[12px] text-foreground/30">
+          reel unavailable
+        </div>
+      ) : null}
+
       {/* Script */}
       <p className="text-foreground/70 text-[13px] leading-relaxed line-clamp-3 mb-3">
         {variant.script}
