@@ -5,19 +5,15 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
-import {
-  MOCK_BATCH_ID,
-  MOCK_HYPOTHESES,
-  MOCK_VARIANTS,
-  MOCK_METRICS,
-  MOCK_AGENT_REASONING,
-} from "@/lib/mockData";
-import HypothesisList from "@/components/HypothesisList";
-import MetricsChart from "@/components/MetricsChart";
-import AgentReasoningPanel from "@/components/AgentReasoningPanel";
-import DNAHeatmap from "@/components/DNAHeatmap";
-import BudgetAllocator from "@/components/BudgetAllocator";
+import { MOCK_BATCH_ID } from "@/lib/mockData";
+import { DEMO_CAMPAIGN, DEMO_OVERALL } from "@/lib/demoReels";
+import DemoDashboard from "@/components/DemoDashboard";
 import CampaignTimeline from "@/components/CampaignTimeline";
+import AgentReasoningPanel from "@/components/AgentReasoningPanel";
+import BudgetAllocator from "@/components/BudgetAllocator";
+import DNAHeatmap from "@/components/DNAHeatmap";
+import MetricsChart from "@/components/MetricsChart";
+import HypothesisList from "@/components/HypothesisList";
 
 const PHASE_LABELS: Record<string, string> = {
   strategizing: "Strategizing...",
@@ -34,36 +30,28 @@ export default function DashboardPage({
   params: { batchId: string };
 }) {
   const { batchId } = params;
-  const isDemo = batchId === MOCK_BATCH_ID;
+  if (batchId === MOCK_BATCH_ID) {
+    return <DemoDashboard weeks={DEMO_CAMPAIGN} overall={DEMO_OVERALL} />;
+  }
 
+  return <LiveDashboard batchId={batchId} />;
+}
+
+function LiveDashboard({ batchId }: { batchId: string }) {
   const router = useRouter();
-
-  // Live Convex queries — skip for demo mode
-  const liveHypotheses = useQuery(api.hypotheses.listByBatch, isDemo ? "skip" : { batchId }) as Hypothesis[] | undefined;
-  const liveVariants = useQuery(api.variants.listByBatch, isDemo ? "skip" : { batchId }) as Variant[] | undefined;
-  const liveMetrics = useQuery(api.metrics.liveMetrics, isDemo ? "skip" : { batchId }) as Metric[] | undefined;
-  const liveStatus = useQuery(api.experiments.getStatus, isDemo ? "skip" : { batchId });
-  const liveReasoning = useQuery(api.agents.reasoningByBatch, isDemo ? "skip" : { batchId });
-  const liveAllocations = useQuery(api.simulator.allocationsByBatch, isDemo ? "skip" : { batchId });
+  const hypotheses = useQuery(api.hypotheses.listByBatch, { batchId }) as Hypothesis[] | undefined;
+  const variants = useQuery(api.variants.listByBatch, { batchId }) as Variant[] | undefined;
+  const metrics = useQuery(api.metrics.liveMetrics, { batchId }) as Metric[] | undefined;
+  const status = useQuery(api.experiments.getStatus, { batchId });
+  const reasoning = useQuery(api.agents.reasoningByBatch, { batchId });
+  const allocations = useQuery(api.simulator.allocationsByBatch, { batchId });
   const startNextBatch = useMutation(api.experiments.startNextBatch);
   const [launchingNext, setLaunchingNext] = useState(false);
 
-  // Demo mode: use mock data instantly. Live mode: use Convex queries.
-  const hypotheses = isDemo ? MOCK_HYPOTHESES : liveHypotheses;
-  const variants = isDemo ? MOCK_VARIANTS : liveVariants;
-  const metrics = isDemo ? MOCK_METRICS : liveMetrics;
-  const allocations = isDemo ? undefined : liveAllocations;
-  const strategistText = isDemo
-    ? MOCK_AGENT_REASONING.strategist
-    : liveReasoning?.find((r) => r.agent === "strategist")?.content;
-  const analystText = isDemo
-    ? MOCK_AGENT_REASONING.analyst
-    : liveReasoning?.find((r) => r.agent === "analyst")?.content;
-  const analystData = isDemo ? undefined : liveReasoning?.find((r) => r.agent === "analyst")?.data;
+  const strategistText = reasoning?.find((r) => r.agent === "strategist")?.content;
+  const analystText = reasoning?.find((r) => r.agent === "analyst")?.content;
+  const analystData = reasoning?.find((r) => r.agent === "analyst")?.data;
 
-  const status = isDemo
-    ? { status: "complete" as const, phase: "complete" as const, progress: 1, error: null }
-    : liveStatus;
   const phase = status?.phase ?? (status?.status === "complete" ? "complete" : undefined);
   const phaseLabel = phase ? PHASE_LABELS[phase] ?? phase : undefined;
   const isFailed = status?.status === "failed";
