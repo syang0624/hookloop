@@ -105,15 +105,15 @@ export default function CampaignTimeline({
         round: di + 1,
         phase: isFirst ? "test" : isLast ? "winner" : "optimize",
         title: isFirst
-          ? "Launch Initial Reels"
+          ? `Week ${day} — Launch & Test`
           : isLast
-            ? "Best Performers Identified"
-            : `Iteration ${di + 1} — Refining`,
+            ? `Week ${day} — Winner Found`
+            : `Week ${day} — Optimize & Iterate`,
         subtitle: isFirst
-          ? `Testing ${alive.length} reels across ${hypothesisGroups.length} hypotheses`
+          ? `${alive.length} reels deployed across ${hypothesisGroups.length} hypotheses · Collecting engagement data`
           : isLast
-            ? `${alive.length} survivors from ${variants.length} tested`
-            : `Dropped ${killed.length} underperformers, scaling ${scaled.length > 0 ? scaled.length : "top"} reels`,
+            ? `${alive.length} high-performers from ${variants.length} tested · Lowest CPC identified`
+            : `Cut ${killed.length} underperformers · Reallocating $${Math.round(totalSpend)} to top ${alive.length} reels`,
         variants: alive,
         metrics: dayMetrics,
         killed,
@@ -235,12 +235,12 @@ export default function CampaignTimeline({
 
           {/* Connector between rounds */}
           {ri < rounds.length - 1 && (
-            <div className="flex items-center gap-3 py-2 ml-5 pl-7">
-              <div className="flex items-center gap-2 text-[11px] text-foreground/25">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="animate-pulse">
-                  <path d="M8 2v8m0 0l-3-3m3 3l3-3M4 14h8" strokeLinecap="round" />
-                </svg>
-                <span className="italic">Revising strategy... generating improved reels</span>
+            <div className="flex items-center gap-3 py-4 ml-5 pl-7">
+              <div className="flex items-center gap-3 text-[11px] text-foreground/30 bg-background rounded-full px-4 py-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                <span>~3-5 days later</span>
+                <span className="text-foreground/15">|</span>
+                <span className="italic">Analyzing results, generating new hypothesis, creating improved reels</span>
               </div>
             </div>
           )}

@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 export default function ReelPreview({
   hookType,
   voice,
@@ -15,70 +11,55 @@ export default function ReelPreview({
   pacing: string;
   status: "winning" | "running" | "killed";
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   const gradients: Record<string, string> = {
-    "pain-point": "from-red-500/80 to-orange-600/80",
-    "statistic": "from-blue-500/80 to-cyan-600/80",
-    "question": "from-purple-500/80 to-pink-600/80",
-    "contrarian": "from-amber-500/80 to-yellow-600/80",
+    "pain-point": "from-rose-600 via-red-500 to-orange-500",
+    "statistic": "from-blue-600 via-indigo-500 to-cyan-500",
+    "question": "from-violet-600 via-purple-500 to-fuchsia-500",
+    "contrarian": "from-amber-600 via-orange-500 to-yellow-500",
   };
-  const bg = gradients[hookType] ?? "from-gray-500/80 to-gray-600/80";
-
+  const bg = gradients[hookType] ?? "from-gray-600 via-gray-500 to-gray-400";
   const pacingSpeed = pacing === "fast" ? "2s" : pacing === "slow" ? "6s" : "4s";
 
   return (
     <div
-      className={`relative w-full aspect-[9/16] rounded-[14px] mb-3 overflow-hidden cursor-pointer group ${
-        status === "killed" ? "grayscale opacity-60" : ""
+      className={`relative w-full aspect-[9/16] rounded-[14px] mb-3 overflow-hidden ${
+        status === "killed" ? "grayscale opacity-50" : ""
       }`}
-      onClick={() => setExpanded(!expanded)}
     >
-      {/* Animated gradient background */}
+      {/* Background */}
       <div
         className={`absolute inset-0 bg-gradient-to-br ${bg}`}
-        style={{
-          animation: `reelShimmer ${pacingSpeed} ease-in-out infinite alternate`,
-        }}
+        style={{ animation: `reelShimmer ${pacingSpeed} ease-in-out infinite alternate` }}
       />
 
-      {/* Scan line effect */}
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)",
-        }}
-      />
+      {/* Subtle grain texture */}
+      <div className="absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
+      }} />
 
-      {/* Content overlay */}
-      <div className="absolute inset-0 flex flex-col justify-between p-4 text-white">
-        {/* Top: hook type + voice */}
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col justify-between p-3.5 text-white">
+        {/* Top bar */}
         <div className="flex items-center justify-between">
-          <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">
+          <span className="rounded-full bg-black/30 backdrop-blur-md px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">
             {hookType}
           </span>
-          <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-1 text-[10px] font-medium">
+          <span className="rounded-full bg-black/30 backdrop-blur-md px-2 py-1 text-[9px] font-medium">
             {voice}
           </span>
         </div>
 
-        {/* Center: play icon */}
-        <div className="flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-all">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
-              <polygon points="6,3 17,10 6,17" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Bottom: script preview */}
-        <div>
-          <p className={`text-[11px] leading-relaxed text-white/90 ${expanded ? "" : "line-clamp-3"}`}>
+        {/* Script — the actual ad copy */}
+        <div className="mt-auto">
+          <p className="text-[11px] leading-relaxed text-white/95 font-medium line-clamp-4 drop-shadow-sm">
             &ldquo;{script}&rdquo;
           </p>
-          <p className="text-[9px] text-white/50 mt-2 uppercase tracking-wider">
-            {pacing} pacing
-          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="h-0.5 flex-1 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/60 rounded-full" style={{ width: "75%", animation: `reelProgress ${pacingSpeed} ease-in-out infinite alternate` }} />
+            </div>
+            <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">{pacing}</span>
+          </div>
         </div>
       </div>
     </div>

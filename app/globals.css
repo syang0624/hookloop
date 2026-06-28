@@ -35,5 +35,10 @@ body {
 
 @keyframes reelShimmer {
   from { filter: brightness(1) hue-rotate(0deg); }
-  to { filter: brightness(1.15) hue-rotate(8deg); }
+  to { filter: brightness(1.1) hue-rotate(5deg); }
+}
+
+@keyframes reelProgress {
+  from { width: 0%; }
+  to { width: 100%; }
 }

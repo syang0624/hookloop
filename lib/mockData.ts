@@ -8,6 +8,7 @@ function fakeId<T extends TableNames>(table: T, n: number): Id<T> {
 }
 
 export const MOCK_BATCH_ID = "batch_001";
+export const SAMPLE_PRODUCT_NAME = "Coca-Cola";
 
 export const MOCK_PRODUCT: Product = {
   _id: fakeId("products", 1),
