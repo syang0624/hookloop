@@ -1,22 +1,21 @@
 /**
  * Pure campaign simulator (Mode A — heuristic, no live ad APIs).
  *
- * Given variants + budget + a number of days, produces per-variant, per-day
- * metrics that are internally consistent (CPC = spend/clicks, CAC =
- * spend/conversions) and REPRODUCIBLE: all randomness flows through a seeded
- * PRNG, so the same inputs always yield the same demo (NORI.md correctness
- * check: "no randomness without a seed").
+ * Two entry points:
+ *   - simulateDay: simulates ONE day given an explicit per-variant budget. This
+ *     is what the day-over-day bandit loop uses — each day's spend per variant
+ *     is decided by the allocator, and a variant given 0 budget gets 0
+ *     impressions (i.e. a killed variant goes dark). See convex/simulator.ts.
+ *   - runCampaign: simulates a whole campaign with a fixed per-variant split.
+ *     Kept for tests / non-bandit callers; it just loops simulateDay.
  *
- * Pipeline per variant per day:
- *   1. effective ctr/cvr = baseline × Π(DNA multipliers)   [dnaWeights]
- *   2. impressions = dailySpend / (cpm / 1000)
- *   3. clicks      ~ Binomial(impressions, ctr)  (normal approx + noise)
- *   4. conversions ~ Binomial(clicks, cvr)        (normal approx + noise)
- *   5. derive cpc, ctr, cac, cvr from the sampled counts
+ * Metrics are internally consistent (CPC = spend/clicks, CAC = spend/conversions)
+ * and REPRODUCIBLE: all randomness flows through a seeded PRNG keyed by
+ * (seed, variant, day), so the same inputs always yield the same demo.
  *
- * Note the lever: because CAC = spend / conversions, only cvr lowers CAC. A
- * high-ctr / low-cvr variant (curiosity hook, learn-more CTA) gets cheap clicks
- * and a low CPC, yet its CAC stays high — which is the whole point.
+ * The lever: because CAC = spend / conversions, only cvr lowers CAC. A
+ * high-ctr / low-cvr variant gets cheap clicks and a low CPC, yet its CAC stays
+ * high — which is the whole point.
  */
 
 import type { Variant } from "../types";
@@ -77,6 +76,46 @@ function sampleBinomial(n: number, p: number, rng: () => number): number {
   return Math.max(0, Math.min(n, draw));
 }
 
+export type SimulateDayInput = {
+  variants: Variant[];
+  /** variantId → spend allocated to that variant for THIS day. Missing/0 = dark. */
+  dailySpend: Record<string, number>;
+  day: number;
+  /** Campaign-level seed; combined with variant id + day for the per-cell stream. */
+  seed: number;
+};
+
+/**
+ * Simulate a single day. A variant with 0 (or missing) spend produces a fully
+ * zeroed row (0 impressions) — that's how a bandit-killed variant goes dark and
+ * the dashboard shows budget reallocating away from it.
+ */
+export function simulateDay(input: SimulateDayInput): SimulatedMetric[] {
+  return input.variants.map((variant) => {
+    const rawSpend = input.dailySpend[variant._id as string] ?? 0;
+    const { ctr: effCtr, cvr: effCvr } = effectiveRates(variant);
+    const impressions = rawSpend > 0 ? Math.round((rawSpend / baseline.cpm) * 1000) : 0;
+
+    const rng = mulberry32(hashSeed(`${input.seed}:${variant._id}:${input.day}`));
+    const clicks = sampleBinomial(impressions, effCtr, rng);
+    const conversions = sampleBinomial(clicks, effCvr, rng);
+    const spend = round2(rawSpend);
+
+    return {
+      variantId: variant._id,
+      day: input.day,
+      impressions,
+      clicks,
+      conversions,
+      spend,
+      cpc: clicks > 0 ? round2(spend / clicks) : 0,
+      ctr: impressions > 0 ? round4(clicks / impressions) : 0,
+      cac: conversions > 0 ? round2(spend / conversions) : 0,
+      cvr: clicks > 0 ? round4(conversions / clicks) : 0,
+    };
+  });
+}
+
 export type RunCampaignInput = {
   variants: Variant[];
   totalBudget: number;
@@ -86,47 +125,25 @@ export type RunCampaignInput = {
 };
 
 /**
- * Simulate the whole campaign and return a flat list of per-variant, per-day
- * metric rows (day is 1-indexed). The Convex action (Task 6) inserts these one
- * simulated day at a time on a scheduler so the dashboard streams.
+ * Simulate a whole campaign with a fixed per-variant budget split (each
+ * variant's own budget, evenly spread across days). Returns a flat list of
+ * per-variant, per-day rows. Used by tests and any non-bandit caller.
  */
 export function runCampaign(input: RunCampaignInput): SimulatedMetric[] {
   const { variants, totalBudget, days } = input;
-  const campaignSeed = input.seed ?? 1337;
-  const out: SimulatedMetric[] = [];
-
-  // Even split as the fallback when a variant carries no explicit budget.
+  const seed = input.seed ?? 1337;
   const evenShare = variants.length > 0 ? totalBudget / variants.length : 0;
 
+  const dailySpend: Record<string, number> = {};
   for (const variant of variants) {
-    const { ctr: effCtr, cvr: effCvr } = effectiveRates(variant);
     const variantTotal = variant.budget > 0 ? variant.budget : evenShare;
-    const dailySpend = days > 0 ? variantTotal / days : 0;
-    const impressions = Math.round((dailySpend / baseline.cpm) * 1000);
-
-    for (let day = 1; day <= days; day++) {
-      // Per (campaign, variant, day) stream → reproducible and independent.
-      const rng = mulberry32(hashSeed(`${campaignSeed}:${variant._id}:${day}`));
-
-      const clicks = sampleBinomial(impressions, effCtr, rng);
-      const conversions = sampleBinomial(clicks, effCvr, rng);
-      const spend = round2(dailySpend);
-
-      out.push({
-        variantId: variant._id,
-        day,
-        impressions,
-        clicks,
-        conversions,
-        spend,
-        cpc: clicks > 0 ? round2(spend / clicks) : 0,
-        ctr: impressions > 0 ? round4(clicks / impressions) : 0,
-        cac: conversions > 0 ? round2(spend / conversions) : 0,
-        cvr: clicks > 0 ? round4(conversions / clicks) : 0,
-      });
-    }
+    dailySpend[variant._id as string] = days > 0 ? variantTotal / days : 0;
   }
 
+  const out: SimulatedMetric[] = [];
+  for (let day = 1; day <= days; day++) {
+    out.push(...simulateDay({ variants, dailySpend, day, seed }));
+  }
   return out;
 }
 

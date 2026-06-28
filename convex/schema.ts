@@ -78,4 +78,19 @@ export default defineSchema({
     cvr: v.number(),
   }).index("by_batch", ["batchId"])
     .index("by_variant", ["variantId"]),
+
+  // ADDED by Nori (N1): the bandit's day-by-day budget decisions, so the shift
+  // is inspectable. One row per (batch, day, variant). status mirrors
+  // lib/bandit.ts Allocation. TODO(steven): BudgetAllocator currently derives
+  // the split from campaign_metrics; you can switch to these exact bandit
+  // shares via simulator.allocationsByBatch(batchId) if you want the real
+  // Thompson allocation rather than the CAC-heuristic approximation.
+  bandit_allocations: defineTable({
+    batchId: v.string(),
+    day: v.number(),
+    variantId: v.id("ad_variants"),
+    share: v.number(),
+    dailyBudget: v.number(),
+    status: v.union(v.literal("scale"), v.literal("explore"), v.literal("kill")),
+  }).index("by_batch", ["batchId"]),
 });
