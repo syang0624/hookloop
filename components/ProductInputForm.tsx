@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { MOCK_PRODUCT, SAMPLE_PRODUCT_NAME, CACHED_BATCH_ID } from "@/lib/mockData";
+import { MOCK_PRODUCT } from "@/lib/mockData";
 import type { ProductInput } from "@/lib/types";
 
 const GOALS = [
@@ -68,11 +68,6 @@ export default function ProductInputForm() {
 
     setSubmitting(true);
     try {
-      // Use cached batch for sample Coca-Cola data (reels already generated)
-      if (form.name === SAMPLE_PRODUCT_NAME && CACHED_BATCH_ID) {
-        router.push(`/dashboard/${CACHED_BATCH_ID}`);
-        return;
-      }
       const { productId } = await createProduct(form);
       const batchId = await startBatch({ productId });
       router.push(`/launch/${batchId}`);

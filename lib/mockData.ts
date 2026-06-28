@@ -24,7 +24,7 @@ export const MOCK_PRODUCT: Product = {
   dailyBudget: 5000,
   totalBudget: 50000,
   maxCPC: 1.20,
-  targetCAC: 4.50,
+  targetCAC: 5,
   goal: "Maximize brand engagement and drive convenience store purchases among 18-34 year olds",
 };
 
