@@ -34,13 +34,11 @@ export default function CampaignTimeline({
   metrics,
   allocations,
   analystText,
-  cachedReelPaths,
 }: {
   variants: Variant[];
   metrics: Metric[];
   allocations?: BanditRow[];
   analystText?: string;
-  cachedReelPaths?: Record<string, string>;
 }) {
   // Group variants by hypothesis for round-based reveal
   const hypothesisGroups = useMemo(() => {
@@ -149,7 +147,6 @@ export default function CampaignTimeline({
             <VariantCard
               key={v._id}
               variant={v}
-              cachedVideoPath={cachedReelPaths?.[v._id as string]}
               metrics={[]}
               revealDelay={i * 500}
               compact

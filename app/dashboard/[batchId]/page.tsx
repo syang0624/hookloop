@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import type { Hypothesis, Variant, Metric } from "@/lib/types";
-import { CACHED_BATCH_ID } from "@/lib/mockData";
+import type { Hypothesis, Variant, Metric, AnalystData } from "@/lib/types";
 import CampaignTimeline from "@/components/CampaignTimeline";
+import WeeklyReport from "@/components/WeeklyReport";
 import AgentReasoningPanel from "@/components/AgentReasoningPanel";
 import BudgetAllocator from "@/components/BudgetAllocator";
 import DNAHeatmap from "@/components/DNAHeatmap";
@@ -52,10 +52,17 @@ function LiveDashboard({ batchId }: { batchId: string }) {
   const isComplete = phase === "complete";
   const productId = variants?.[0]?.productId;
 
-  // Build cached reel paths for the Coca-Cola demo batch
-  const cachedReelPaths = batchId === CACHED_BATCH_ID && variants
-    ? Object.fromEntries(variants.map((v, i) => [v._id as string, `/reels/reel_${i + 1}.mp4`]))
-    : undefined;
+  const weeks = useQuery(
+    api.experiments.weeksByProduct,
+    productId ? { productId } : "skip",
+  );
+
+  const parsedAnalyst: AnalystData | null = analystData ? (JSON.parse(analystData) as AnalystData) : null;
+  const thisWeek = weeks?.find((w) => w.batchId === batchId) ?? null;
+  const weekNumber = thisWeek?.week ?? 1;
+  const prevWeek = thisWeek ? weeks?.find((w) => w.week === thisWeek.week - 1) ?? null : null;
+  const isLastWeek = weekNumber >= 3;
+  const metricsStarted = (metrics?.length ?? 0) > 0;
 
   async function handleNextBatch() {
     if (!productId || launchingNext) return;
@@ -114,14 +121,19 @@ function LiveDashboard({ batchId }: { batchId: string }) {
                   />
                   {phaseLabel ?? (status.status === "running" ? "Running" : "Complete")}
                 </span>
-                {isComplete && productId && (
+                {isComplete && productId && !isLastWeek && (
                   <button
                     onClick={handleNextBatch}
                     disabled={launchingNext}
                     className="rounded-full bg-primary text-white px-4 py-1.5 text-[12px] font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50"
                   >
-                    {launchingNext ? "Starting..." : "Run Next Batch"}
+                    {launchingNext ? "Starting..." : "Run Next Week ▸"}
                   </button>
+                )}
+                {isComplete && isLastWeek && (
+                  <span className="rounded-full bg-green-500/10 text-green-600 px-4 py-1.5 text-[12px] font-semibold">
+                    Campaign complete · 3 weeks
+                  </span>
                 )}
               </div>
             )}
@@ -153,9 +165,12 @@ function LiveDashboard({ batchId }: { batchId: string }) {
             </BentoCard>
           )}
 
-          {/* Hypotheses */}
+          {/* This week's hypothesis — shown report-style every week */}
           {hypotheses !== undefined && hypotheses.length > 0 && (
-            <BentoCard title="Hypotheses Being Tested">
+            <BentoCard title={`Week ${weekNumber} — Hypothesis`} accent>
+              <p className="text-[13px] text-foreground/50 mb-4">
+                What we believe will lower CAC this week — judged in the Week {weekNumber} report below.
+              </p>
               <HypothesisList hypotheses={hypotheses} />
             </BentoCard>
           )}
@@ -168,7 +183,6 @@ function LiveDashboard({ batchId }: { batchId: string }) {
                 metrics={metrics}
                 allocations={allocations as Array<{ day: number; variantId: string; share: number; dailyBudget: number; status: "scale" | "explore" | "kill" }>}
                 analystText={analystText}
-                cachedReelPaths={cachedReelPaths}
               />
             </BentoCard>
           ) : (
@@ -184,8 +198,34 @@ function LiveDashboard({ batchId }: { batchId: string }) {
 
         {/* Sidebar — analytics panels */}
         <aside className="col-span-12 lg:col-span-4 space-y-4 lg:space-y-5">
+          {/* Cross-week CPC trend — visibly drops week to week */}
+          {weeks && weeks.length > 0 && (
+            <BentoCard title="CPC by Week">
+              <div className="flex items-end gap-3 h-28">
+                {weeks.map((w) => {
+                  const maxCpc = Math.max(...weeks.map((x) => x.avgCpc), 0.01);
+                  const height = w.avgCpc > 0 ? (w.avgCpc / maxCpc) * 100 : 4;
+                  return (
+                    <div key={w.batchId} className="flex-1 flex flex-col items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-foreground">
+                        {w.avgCpc > 0 ? `$${w.avgCpc.toFixed(2)}` : "—"}
+                      </span>
+                      <div
+                        className={`w-full rounded-t-[8px] transition-all duration-500 ${
+                          w.batchId === batchId ? "bg-primary" : "bg-primary/30"
+                        }`}
+                        style={{ height: `${height}%` }}
+                      />
+                      <span className="text-[10px] text-foreground/40 font-semibold">Wk {w.week}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </BentoCard>
+          )}
+
           <BentoCard title="Budget Reallocation">
-            {variants === undefined || metrics === undefined ? (
+            {variants === undefined || metrics === undefined || !metricsStarted ? (
               <Skeleton lines={3} />
             ) : (
               <BudgetAllocator variants={variants} metrics={metrics} banditAllocations={allocations} />
@@ -193,7 +233,7 @@ function LiveDashboard({ batchId }: { batchId: string }) {
           </BentoCard>
 
           <BentoCard title="Creative DNA Heatmap">
-            {variants === undefined || metrics === undefined ? (
+            {variants === undefined || metrics === undefined || !metricsStarted ? (
               <Skeleton lines={4} />
             ) : (
               <DNAHeatmap variants={variants} metrics={metrics} analystData={analystData} />
@@ -201,7 +241,7 @@ function LiveDashboard({ batchId }: { batchId: string }) {
           </BentoCard>
 
           <BentoCard title="Performance Trends">
-            {metrics === undefined || variants === undefined ? (
+            {metrics === undefined || variants === undefined || !metricsStarted ? (
               <Skeleton lines={5} />
             ) : (
               <MetricsChart metrics={metrics} variants={variants} />
@@ -216,6 +256,19 @@ function LiveDashboard({ batchId }: { batchId: string }) {
               <p className="text-[12px] text-foreground/30 italic">Waiting for campaign to complete...</p>
             )}
           </BentoCard>
+
+          {isComplete && parsedAnalyst && (
+            <WeeklyReport
+              week={weekNumber}
+              hypotheses={hypotheses ?? []}
+              analystData={parsedAnalyst}
+              avgCpc={thisWeek?.avgCpc ?? 0}
+              avgCac={thisWeek?.avgCac ?? 0}
+              prevCpc={prevWeek?.avgCpc ?? null}
+              prevCac={prevWeek?.avgCac ?? null}
+              variants={variants ?? []}
+            />
+          )}
         </aside>
       </div>
     </div>
