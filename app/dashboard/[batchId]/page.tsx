@@ -169,16 +169,24 @@ function LiveDashboard({ batchId }: { batchId: string }) {
               </div>
             </div>
           ) : (
-            weeks.map((w, i) => (
-              <WeekSection
-                key={w.batchId}
-                batchId={w.batchId}
-                week={w.week}
-                prevCpc={i > 0 ? weeks[i - 1].avgCpc : null}
-                prevCac={i > 0 ? weeks[i - 1].avgCac : null}
-                isActive={w.batchId === batchId}
-              />
-            ))
+            // Newest week on top. `weeks` is chronological (week = index+1), so
+            // each week's delta still references its chronological predecessor.
+            weeks
+              .slice()
+              .reverse()
+              .map((w) => {
+                const prev = w.week > 1 ? weeks[w.week - 2] : null;
+                return (
+                  <WeekSection
+                    key={w.batchId}
+                    batchId={w.batchId}
+                    week={w.week}
+                    prevCpc={prev?.avgCpc ?? null}
+                    prevCac={prev?.avgCac ?? null}
+                    isActive={w.batchId === batchId}
+                  />
+                );
+              })
           )}
         </main>
 

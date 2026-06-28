@@ -22,7 +22,7 @@ const PHASE_TEXT: Record<string, string> = {
   strategizing: "Strategist is forming this week's hypotheses…",
   generating: "Generating new reels from last week's learnings…",
   generating_video: "Producing the reels…",
-  simulating: "Running the 3-day simulation…",
+  simulating: "Running the 7-day simulation…",
   analyzing: "Analyzing what worked…",
 };
 

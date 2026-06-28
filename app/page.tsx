@@ -47,7 +47,7 @@ export default function Home() {
           <div className="col-span-2 md:col-span-1 bg-card rounded-bento shadow-bento p-6 flex flex-col justify-between min-h-[150px]">
             <span className="text-[13px] font-semibold text-foreground/40 uppercase tracking-wide">Simulation</span>
             <div>
-              <p className="text-4xl font-bold font-display text-foreground">3</p>
+              <p className="text-4xl font-bold font-display text-foreground">7</p>
               <p className="text-[13px] text-foreground/50 mt-1">Day campaign with live bandit</p>
             </div>
           </div>

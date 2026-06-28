@@ -21,7 +21,7 @@ import { v } from "convex/values";
 import { simulateDay } from "../lib/simulator/runCampaign";
 import { allocate, initArm, updateArm } from "../lib/bandit";
 
-const TOTAL_DAYS = 3;
+const TOTAL_DAYS = 7;
 const DAY_DELAY_MS = 2000;
 const PERF_MULT_PER_WEEK = 1.25; // week w multiplies effective CTR/CVR by 1.25^(w-1)
 const REEL_GATE_INTERVAL_MS = 1500;

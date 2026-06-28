@@ -50,7 +50,7 @@ export default function ReelModal({
         {videoSrc ? (
           <video
             src={videoSrc}
-            className={`w-full aspect-[9/16] object-cover bg-black ${killed ? "grayscale opacity-70" : ""}`}
+            className="w-full aspect-[9/16] object-cover bg-black"
             controls
             autoPlay
             loop

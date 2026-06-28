@@ -16,7 +16,7 @@ import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
-const TOTAL_DAYS = 3;
+const TOTAL_DAYS = 7;
 
 type Phase = "strategizing" | "generating" | "generating_video" | "simulating" | "analyzing" | "complete" | "failed";
 
