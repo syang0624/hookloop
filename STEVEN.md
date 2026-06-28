@@ -1,12 +1,12 @@
 # STEVEN.md — Frontend Owner
 
-Working on `main` (post-merge). Read `CLAUDE.md` first.
+Working on `main`. Read `CLAUDE.md` first.
 
 ---
 
-## Phase 1 status: COMPLETE
+## Phase 1: COMPLETE | Phase 2 integration: COMPLETE
 
-All original tasks (1-10) are done, design system applied, responsive pass done, launch interstitial added.
+All original tasks (1-10) done. Design system applied. I1-I5 integration done — dashboard wired to live Convex data, mock fallbacks removed, phase display working, analyst attribution in heatmap.
 
 ---
 
@@ -37,65 +37,51 @@ tailwind.config.ts
 
 ---
 
-## Phase 2 — Integration tasks (post-merge)
+## Phase 2 integration — DONE
 
-These wire the frontend to Nori's live backend. All Convex functions now exist.
-
-### Task I1 — Wire form to real `products.create` + `experiments.startBatch`
-
-The form currently has a `USE_MOCKS` flag and navigates to a hardcoded `MOCK_BATCH_ID`. Now that `products.create` returns `{ productId, batchId }` and `experiments.startBatch(productId)` triggers the loop:
-
-1. Remove the `USE_MOCKS` branch in `ProductInputForm.tsx`
-2. After `createProduct(form)`, call `startBatch(productId)` — this returns the real batchId
-3. Navigate to `/launch/${batchId}` with the real batchId
-4. The launch interstitial auto-redirects to `/dashboard/${batchId}`
-
-### Task I2 — Wire AgentReasoningPanel to live `agents.reasoningByBatch`
-
-**Contract addition from Nori** (not in original CLAUDE.md):
-- New table: `agent_reasoning` with fields `{ batchId, agent, content, data, createdAt }`
-- New query: `api.agents.reasoningByBatch(batchId)` → returns array of reasoning rows
-
-Currently the dashboard hardcodes `MOCK_AGENT_REASONING`. Replace with:
-```ts
-const liveReasoning = useQuery(api.agents.reasoningByBatch, { batchId });
-```
-Filter by `agent === "strategist"` and `agent === "analyst"`, pass `.content` to `AgentReasoningPanel`. Keep mock fallback for when no reasoning rows exist yet (experiment just started).
-
-### Task I3 — Use `phase` from `experiments.getStatus` in header
-
-`getStatus` now returns `{ status, phase, progress }` where `phase` is one of:
-`"strategizing" | "generating" | "simulating" | "analyzing" | "complete"`
-
-Show the phase in the dashboard header badge instead of just "Running"/"Complete". E.g. "Strategizing...", "Simulating (Day 2)..." etc. The `progress` field (0-1) can drive a subtle progress bar.
-
-### Task I4 — Use analyst `perDimensionAttribution` in DNAHeatmap
-
-The analyst stores structured data in `agent_reasoning.data` (JSON string). Parse it to get:
-```ts
-perDimensionAttribution: Array<{
-  dimension: string;  // "hookType", "voice", etc.
-  value: string;      // "pain-point", "founder", etc.
-  cacDeltaPct: number; // e.g. -23 means 23% lower CAC
-  cpcDeltaPct: number;
-}>
-```
-This is more accurate than the heatmap's current approach of averaging raw CAC. Use `cacDeltaPct` to color cells when analyst data is available, falling back to the current raw-average logic when it's not.
-
-### Task I5 — Remove mock fallbacks
-
-Once I1-I4 are wired and tested end-to-end with a real OpenAI key:
-1. Remove all mock fallback logic from the dashboard (the `liveX.length > 0 ? live : MOCK` pattern)
-2. Show proper empty states when data hasn't arrived yet (skeleton loaders are already in place)
-3. `lib/mockData.ts` can stay for development but should not be imported in production code paths
-
-### Task I6 — `npm install` after merge
-
-Nori added `openai ^6` to `package.json`. Run `npm install` before anything else.
+- [x] I1: Form calls real `products.create` + `startBatch`, navigates with real batchId
+- [x] I2: Reasoning panels wired to `api.agents.reasoningByBatch`
+- [x] I3: Header shows phase (Strategizing/Generating/Simulating/Analyzing/Complete) + progress bar
+- [x] I4: DNAHeatmap uses analyst `cacDeltaPct` when available
+- [x] I5: Mock fallbacks removed from dashboard
+- [x] I6: `npm install` (openai dep)
+- [x] `npm run build` passes
 
 ---
 
-## Contracts with Nori (updated post-merge)
+## Phase 3 — Remaining polish (demo day)
+
+### S1 — "Run Next Batch" button (HIGH)
+
+Nori shipped `experiments.startNextBatch({ productId, priorBatchId })`. Add a button to the dashboard that appears when `phase === "complete"`:
+```ts
+const startNext = useMutation(api.experiments.startNextBatch);
+// onClick: const newBatchId = await startNext({ productId, priorBatchId: batchId });
+//          router.push(`/launch/${newBatchId}`);
+```
+This closes the loop visually — judges see the system learn from itself.
+
+### S2 — Failed state UI (MEDIUM)
+
+`getStatus` now returns `{ status: "failed", error: "..." }`. The dashboard header doesn't handle this. Add:
+- Red error badge when `status === "failed"`
+- Show the error message
+- A "Retry" button that calls `startBatch` again
+
+### S3 — BudgetAllocator uses real bandit data (MEDIUM)
+
+Nori added `simulator.allocationsByBatch(batchId)` returning exact Thompson sampling allocations per day (with scale/explore/kill status). BudgetAllocator currently approximates from metrics. Switch to:
+```ts
+const allocations = useQuery(api.simulator.allocationsByBatch, { batchId });
+```
+
+### S4 — CampaignTimeline (LOW)
+
+Still a stub. Could show day-by-day events with timestamps.
+
+---
+
+## Contracts with Nori (final)
 
 **Queries** (use `useQuery`):
 
@@ -104,25 +90,15 @@ api.products.getById(productId);
 api.variants.listByBatch(batchId);
 api.metrics.liveMetrics(batchId);
 api.hypotheses.listByBatch(batchId);
-api.experiments.getStatus(batchId);        // returns { status, phase, progress }
-api.agents.reasoningByBatch(batchId);      // NEW — returns agent_reasoning rows
+api.experiments.getStatus(batchId);          // { status, phase, progress, error }
+api.agents.reasoningByBatch(batchId);        // agent_reasoning rows
+api.simulator.allocationsByBatch(batchId);   // bandit_allocations rows (NEW — for S3)
 ```
 
 **Mutations** (use `useMutation`):
 
 ```ts
-api.products.create(input);                // returns { productId, batchId }
-api.experiments.startBatch(productId);     // returns batchId, triggers full loop
+api.products.create(input);                  // returns { productId, batchId }
+api.experiments.startBatch(productId);       // returns batchId, triggers loop
+api.experiments.startNextBatch({ productId, priorBatchId }); // NEW — for S1
 ```
-
----
-
-## Definition of "Phase 2 done"
-
-- [ ] Form submits to real Convex, receives real batchId, navigates to live dashboard
-- [ ] Dashboard shows live data streaming in day-by-day (no mock fallbacks)
-- [ ] Agent reasoning panel shows real strategist + analyst output
-- [ ] Header shows current phase (strategizing → generating → simulating → analyzing → complete)
-- [ ] DNAHeatmap uses analyst attribution data when available
-- [ ] `npm run build` passes
-- [ ] End-to-end demo works with a real OpenAI key
