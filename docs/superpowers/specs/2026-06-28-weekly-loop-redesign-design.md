@@ -124,6 +124,15 @@ commentary," not random noise.
 The week factor is derived from the product's batch ordinal (same source as the
 video `week`).
 
+### Per-week hypothesis display
+
+Each week opens by displaying **that week's hypothesis** prominently, report-style
+("Week N — Hypothesis"), sourced from the batch's `hypotheses`. The same
+hypothesis is **recapped in the Weekly Report** next to its verdict, so each week
+reads as a self-contained experiment: here's what we believed → here's what
+happened → here's the verdict. This makes the hypothesis visible every week, not
+just buried in the Strategist panel.
+
 ### Weekly Report
 
 Extend `analystSchema` + `buildAnalystPrompt` with a `hypothesisVerdict` array:
