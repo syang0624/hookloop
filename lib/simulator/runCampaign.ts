@@ -83,6 +83,13 @@ export type SimulateDayInput = {
   day: number;
   /** Campaign-level seed; combined with variant id + day for the per-cell stream. */
   seed: number;
+  /**
+   * Per-week performance prior (>= 1). Each generation inherits the prior week's
+   * winning DNA, so later weeks convert better: this multiplies effective CTR &
+   * CVR, which lowers CPC and CAC. Documented demo prior — applied on top of the
+   * seeded per-variant variance, not replacing it. Defaults to 1 (week 1).
+   */
+  perfMult?: number;
 };
 
 /**
@@ -91,9 +98,12 @@ export type SimulateDayInput = {
  * the dashboard shows budget reallocating away from it.
  */
 export function simulateDay(input: SimulateDayInput): SimulatedMetric[] {
+  const perfMult = input.perfMult ?? 1;
   return input.variants.map((variant) => {
     const rawSpend = input.dailySpend[variant._id as string] ?? 0;
-    const { ctr: effCtr, cvr: effCvr } = effectiveRates(variant);
+    const base = effectiveRates(variant);
+    const effCtr = Math.min(0.99, base.ctr * perfMult);
+    const effCvr = Math.min(0.99, base.cvr * perfMult);
     const impressions = rawSpend > 0 ? Math.round((rawSpend / baseline.cpm) * 1000) : 0;
 
     const rng = mulberry32(hashSeed(`${input.seed}:${variant._id}:${input.day}`));

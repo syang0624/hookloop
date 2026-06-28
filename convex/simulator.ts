@@ -23,6 +23,7 @@ import { allocate, initArm, updateArm } from "../lib/bandit";
 
 const TOTAL_DAYS = 3;
 const DAY_DELAY_MS = 2000;
+const PERF_MULT_PER_WEEK = 1.25; // week w multiplies effective CTR/CVR by 1.25^(w-1)
 const REEL_GATE_INTERVAL_MS = 1500;
 const REEL_GATE_MAX_ATTEMPTS = 200; // ~5 min ceiling, then proceed anyway
 
@@ -110,6 +111,9 @@ export const streamDay = internalAction({
       throw new Error(`Simulator: no variants for batch ${args.batchId}`);
     }
     const productId = variants[0].productId;
+    const weeks = await ctx.runQuery(api.experiments.weeksByProduct, { productId });
+    const week = weeks.find((w) => w.batchId === args.batchId)?.week ?? 1;
+    const perfMult = PERF_MULT_PER_WEEK ** (week - 1);
     const seed = seedFromBatch(args.batchId);
     const totalDailyPot = variants.reduce((acc, vr) => acc + vr.budget, 0) / TOTAL_DAYS;
 
@@ -173,7 +177,7 @@ export const streamDay = internalAction({
       allocations: allocRecords,
     });
 
-    const todays = simulateDay({ variants, dailySpend, day: args.day, seed });
+    const todays = simulateDay({ variants, dailySpend, day: args.day, seed, perfMult });
     await ctx.runMutation(internal.simulator.insertDayMetrics, {
       batchId: args.batchId,
       metrics: todays,
