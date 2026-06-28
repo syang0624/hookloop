@@ -1,6 +1,8 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
 import HypothesisList from "@/components/HypothesisList";
@@ -16,6 +18,7 @@ const PHASE_LABELS: Record<string, string> = {
   simulating: "Simulating campaign...",
   analyzing: "Analyzing results...",
   complete: "Complete",
+  failed: "Failed",
 };
 
 export default function DashboardPage({
@@ -25,11 +28,15 @@ export default function DashboardPage({
 }) {
   const { batchId } = params;
 
+  const router = useRouter();
   const hypotheses = useQuery(api.hypotheses.listByBatch, { batchId }) as Hypothesis[] | undefined;
   const variants = useQuery(api.variants.listByBatch, { batchId }) as Variant[] | undefined;
   const metrics = useQuery(api.metrics.liveMetrics, { batchId }) as Metric[] | undefined;
   const status = useQuery(api.experiments.getStatus, { batchId });
   const reasoning = useQuery(api.agents.reasoningByBatch, { batchId });
+  const allocations = useQuery(api.simulator.allocationsByBatch, { batchId });
+  const startNextBatch = useMutation(api.experiments.startNextBatch);
+  const [launchingNext, setLaunchingNext] = useState(false);
 
   const strategistText = reasoning?.find((r) => r.agent === "strategist")?.content;
   const analystText = reasoning?.find((r) => r.agent === "analyst")?.content;
@@ -37,6 +44,20 @@ export default function DashboardPage({
 
   const phase = status?.phase ?? (status?.status === "complete" ? "complete" : undefined);
   const phaseLabel = phase ? PHASE_LABELS[phase] ?? phase : undefined;
+  const isFailed = status?.status === "failed";
+  const isComplete = phase === "complete";
+  const productId = variants?.[0]?.productId;
+
+  async function handleNextBatch() {
+    if (!productId || launchingNext) return;
+    setLaunchingNext(true);
+    try {
+      const newBatchId = await startNextBatch({ productId, priorBatchId: batchId });
+      router.push(`/launch/${newBatchId}`);
+    } finally {
+      setLaunchingNext(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,23 +87,51 @@ export default function DashboardPage({
                 )}
                 <span
                   className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-semibold ${
-                    status.status === "running"
-                      ? "bg-green-500/10 text-green-600"
-                      : "bg-foreground/5 text-foreground/50"
+                    isFailed
+                      ? "bg-red-500/10 text-red-500"
+                      : status.status === "running"
+                        ? "bg-green-500/10 text-green-600"
+                        : "bg-foreground/5 text-foreground/50"
                   }`}
                 >
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      status.status === "running" ? "bg-green-500 animate-pulse" : "bg-foreground/30"
+                      isFailed
+                        ? "bg-red-500"
+                        : status.status === "running"
+                          ? "bg-green-500 animate-pulse"
+                          : "bg-foreground/30"
                     }`}
                   />
                   {phaseLabel ?? (status.status === "running" ? "Running" : "Complete")}
                 </span>
+                {isComplete && productId && (
+                  <button
+                    onClick={handleNextBatch}
+                    disabled={launchingNext}
+                    className="rounded-full bg-primary text-white px-4 py-1.5 text-[12px] font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50"
+                  >
+                    {launchingNext ? "Starting..." : "Run Next Batch"}
+                  </button>
+                )}
               </div>
             )}
           </div>
         </header>
       </div>
+
+      {/* Error banner */}
+      {isFailed && status?.error && (
+        <div className="mx-4 lg:mx-6 mt-4">
+          <div className="bg-red-50 rounded-bento p-5 flex items-start gap-3">
+            <span className="text-red-500 text-lg flex-shrink-0">!</span>
+            <div>
+              <p className="text-[13px] font-semibold text-red-600">Experiment failed</p>
+              <p className="text-[12px] text-red-500/70 mt-1">{status.error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bento grid dashboard */}
       <div className="grid grid-cols-12 gap-4 lg:gap-5 p-4 lg:p-6">
@@ -100,7 +149,7 @@ export default function DashboardPage({
             {variants === undefined || metrics === undefined ? (
               <Skeleton lines={3} />
             ) : (
-              <BudgetAllocator variants={variants} metrics={metrics} />
+              <BudgetAllocator variants={variants} metrics={metrics} banditAllocations={allocations} />
             )}
           </BentoCard>
         </aside>
