@@ -190,7 +190,7 @@ export default function CampaignTimeline({
             </div>
 
             {/* Data reaction bar */}
-            <div className="bg-card rounded-[16px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 200}ms`, animationFillMode: "backwards" }}>
+            <div className="bg-card rounded-[16px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${(r.variants.length + r.killed.length) * 300 + 200}ms`, animationFillMode: "backwards" }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-foreground/30">Data Reaction</span>
                 {r.cacDelta !== null && (
@@ -212,7 +212,7 @@ export default function CampaignTimeline({
 
             {/* Killed callout */}
             {r.killed.length > 0 && (
-              <div className="bg-red-50 rounded-[14px] p-3 text-[12px] text-red-600 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 400}ms`, animationFillMode: "backwards" }}>
+              <div className="bg-red-50 rounded-[14px] p-3 text-[12px] text-red-600 mb-3 animate-fadeIn" style={{ animationDelay: `${(r.variants.length + r.killed.length) * 300 + 400}ms`, animationFillMode: "backwards" }}>
                 <span className="font-semibold">Killed {r.killed.length} reel{r.killed.length > 1 ? "s" : ""}:</span>{" "}
                 {r.killed.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
               </div>
@@ -220,7 +220,7 @@ export default function CampaignTimeline({
 
             {/* Scaling callout */}
             {r.scaled.length > 0 && (
-              <div className="bg-green-50 rounded-[14px] p-3 text-[12px] text-green-600 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 500}ms`, animationFillMode: "backwards" }}>
+              <div className="bg-green-50 rounded-[14px] p-3 text-[12px] text-green-600 mb-3 animate-fadeIn" style={{ animationDelay: `${(r.variants.length + r.killed.length) * 300 + 500}ms`, animationFillMode: "backwards" }}>
                 <span className="font-semibold">Scaling:</span>{" "}
                 {r.scaled.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
                 {" — getting more budget"}
@@ -229,7 +229,7 @@ export default function CampaignTimeline({
 
             {/* System insight / hypothesis revision */}
             {r.insight && (
-              <div className="bg-primary/5 rounded-[14px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 600}ms`, animationFillMode: "backwards" }}>
+              <div className="bg-primary/5 rounded-[14px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${(r.variants.length + r.killed.length) * 300 + 600}ms`, animationFillMode: "backwards" }}>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-primary/60 mb-1">
                   {r.phase === "winner" ? "Conclusion" : "Hypothesis Revision"}
                 </p>

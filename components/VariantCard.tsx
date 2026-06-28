@@ -87,7 +87,7 @@ export default function VariantCard({
           <video
             src={videoSrc}
             className={`w-full rounded-[14px] aspect-[9/16] object-cover bg-background ${
-              isDead ? "grayscale opacity-50" : ""
+              isDead ? "grayscale" : ""
             }`}
             autoPlay
             muted
