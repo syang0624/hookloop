@@ -5,17 +5,27 @@ import type { Variant, Metric } from "@/lib/types";
 
 type CellData = {
   avgCac: number;
+  cacDeltaPct: number | null;
   count: number;
   totalSpend: number;
   totalConversions: number;
 };
 
+type Attribution = {
+  dimension: string;
+  value: string;
+  cacDeltaPct: number;
+  cpcDeltaPct: number;
+};
+
 export default function DNAHeatmap({
   variants,
   metrics,
+  analystData,
 }: {
   variants: Variant[];
   metrics: Metric[];
+  analystData?: string;
 }) {
   const [hovered, setHovered] = useState<{ row: number; col: number } | null>(null);
 
@@ -34,6 +44,22 @@ export default function DNAHeatmap({
     for (const v of variants) m.set(v._id as string, { hookType: v.hookType, voice: v.voice });
     return m;
   }, [variants]);
+
+  // Parse analyst attribution if available
+  const attributionMap = useMemo(() => {
+    if (!analystData) return null;
+    try {
+      const parsed = JSON.parse(analystData) as { perDimensionAttribution?: Attribution[] };
+      if (!parsed.perDimensionAttribution) return null;
+      const m = new Map<string, number>();
+      for (const a of parsed.perDimensionAttribution) {
+        m.set(`${a.dimension}::${a.value}`, a.cacDeltaPct);
+      }
+      return m;
+    } catch {
+      return null;
+    }
+  }, [analystData]);
 
   // Aggregate metrics by (hookType, voice) -> avg CAC
   const grid = useMemo(() => {
@@ -54,20 +80,41 @@ export default function DNAHeatmap({
 
     const result = new Map<string, CellData>();
     cells.forEach((cell, key) => {
+      // Check if analyst attribution gives us a cacDeltaPct for this hook or voice
+      const [hook, voice] = key.split("::");
+      const hookDelta = attributionMap?.get(`hookType::${hook}`) ?? null;
+      const voiceDelta = attributionMap?.get(`voice::${voice}`) ?? null;
+      const cacDelta = hookDelta !== null && voiceDelta !== null
+        ? (hookDelta + voiceDelta) / 2
+        : hookDelta ?? voiceDelta ?? null;
+
       result.set(key, {
         avgCac: cell.count > 0 ? cell.totalCac / cell.count : 0,
+        cacDeltaPct: cacDelta,
         count: cell.count,
         totalSpend: cell.spend,
         totalConversions: cell.conversions,
       });
     });
     return result;
-  }, [metrics, variantDna]);
+  }, [metrics, variantDna, attributionMap]);
 
   // Find CAC range for color scaling
   const allCacs = Array.from(grid.values()).map((c) => c.avgCac).filter((c) => c > 0);
   const minCac = allCacs.length > 0 ? Math.min(...allCacs) : 0;
   const maxCac = allCacs.length > 0 ? Math.max(...allCacs) : 100;
+
+  // Color by cacDeltaPct: negative (lower CAC) = green, positive (higher CAC) = red
+  function deltaToColor(delta: number): string {
+    const clamped = Math.max(-50, Math.min(50, delta));
+    const t = (clamped + 50) / 100; // 0 = -50% (green), 1 = +50% (red)
+    if (t < 0.5) {
+      const s = t * 2;
+      return `rgb(${Math.round(52 + s * 203)}, ${Math.round(199 - s * 50)}, ${Math.round(89 - s * 39)})`;
+    }
+    const s = (t - 0.5) * 2;
+    return `rgb(${Math.round(255)}, ${Math.round(149 - s * 90)}, ${Math.round(50 - s * 2)})`;
+  }
 
   function cacToColor(cac: number): string {
     if (cac === 0) return "#F2F2F7"; // empty cell — matches bg
@@ -123,6 +170,7 @@ export default function DNAHeatmap({
             {voiceTypes.map((voice, ci) => {
               const cell = grid.get(`${hook}::${voice}`);
               const cac = cell?.avgCac ?? 0;
+              const delta = cell?.cacDeltaPct ?? null;
               const isHovered = hovered?.row === ri && hovered?.col === ci;
 
               return (
@@ -133,13 +181,17 @@ export default function DNAHeatmap({
                   className={`rounded-[12px] h-12 flex items-center justify-center cursor-pointer transition-all duration-200 ${
                     isHovered ? "ring-2 ring-foreground scale-105" : ""
                   }`}
-                  style={{ backgroundColor: cacToColor(cac) }}
+                  style={{ backgroundColor: delta !== null ? deltaToColor(delta) : cacToColor(cac) }}
                 >
-                  {cac > 0 && (
+                  {delta !== null ? (
+                    <span className={`text-[12px] font-bold ${delta < 0 ? "text-green-800" : "text-red-800"}`}>
+                      {delta > 0 ? "+" : ""}{delta.toFixed(0)}%
+                    </span>
+                  ) : cac > 0 ? (
                     <span className="text-[12px] font-bold text-foreground/80">
                       ${cac.toFixed(0)}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
@@ -154,6 +206,11 @@ export default function DNAHeatmap({
           {" x "}
           <span className="font-semibold text-foreground">{voiceTypes[hovered.col]}</span>
           <div className="flex gap-4 mt-2 text-[11px]">
+            {hoveredCell.cacDeltaPct !== null && (
+              <span>CAC impact: <span className={`font-bold ${hoveredCell.cacDeltaPct < 0 ? "text-green-600" : "text-red-500"}`}>
+                {hoveredCell.cacDeltaPct > 0 ? "+" : ""}{hoveredCell.cacDeltaPct.toFixed(1)}%
+              </span></span>
+            )}
             <span>Avg CAC: <span className="font-bold text-foreground">${hoveredCell.avgCac.toFixed(2)}</span></span>
             <span>{hoveredCell.count} data points</span>
             <span>${hoveredCell.totalSpend.toFixed(0)} spend</span>
@@ -164,17 +221,21 @@ export default function DNAHeatmap({
 
       {/* Legend */}
       <div className="flex items-center gap-3 mt-4 text-[11px] text-foreground/35 font-medium">
-        <span>Low CAC</span>
+        <span>{attributionMap ? "Lowers CAC" : "Low CAC"}</span>
         <div className="flex h-2.5 w-28 rounded-full overflow-hidden">
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
               className="flex-1"
-              style={{ backgroundColor: cacToColor(minCac + ((maxCac - minCac) * i) / 9) }}
+              style={{
+                backgroundColor: attributionMap
+                  ? deltaToColor(-50 + (100 * i) / 9)
+                  : cacToColor(minCac + ((maxCac - minCac) * i) / 9),
+              }}
             />
           ))}
         </div>
-        <span>High CAC</span>
+        <span>{attributionMap ? "Raises CAC" : "High CAC"}</span>
       </div>
     </div>
   );

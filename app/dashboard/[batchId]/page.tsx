@@ -2,13 +2,6 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import {
-  MOCK_HYPOTHESES,
-  MOCK_VARIANTS,
-  MOCK_METRICS,
-  MOCK_EXPERIMENT,
-  MOCK_AGENT_REASONING,
-} from "@/lib/mockData";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
 import HypothesisList from "@/components/HypothesisList";
 import VariantCard from "@/components/VariantCard";
@@ -17,6 +10,14 @@ import AgentReasoningPanel from "@/components/AgentReasoningPanel";
 import DNAHeatmap from "@/components/DNAHeatmap";
 import BudgetAllocator from "@/components/BudgetAllocator";
 
+const PHASE_LABELS: Record<string, string> = {
+  strategizing: "Strategizing...",
+  generating: "Generating variants...",
+  simulating: "Simulating campaign...",
+  analyzing: "Analyzing results...",
+  complete: "Complete",
+};
+
 export default function DashboardPage({
   params,
 }: {
@@ -24,37 +25,18 @@ export default function DashboardPage({
 }) {
   const { batchId } = params;
 
-  // Convex queries — fall back to mocks while backend isn't ready
-  const liveHypotheses = useQuery(api.hypotheses.listByBatch, { batchId });
-  const liveVariants = useQuery(api.variants.listByBatch, { batchId });
-  const liveMetrics = useQuery(api.metrics.liveMetrics, { batchId });
-  const liveStatus = useQuery(api.experiments.getStatus, { batchId });
+  const hypotheses = useQuery(api.hypotheses.listByBatch, { batchId }) as Hypothesis[] | undefined;
+  const variants = useQuery(api.variants.listByBatch, { batchId }) as Variant[] | undefined;
+  const metrics = useQuery(api.metrics.liveMetrics, { batchId }) as Metric[] | undefined;
+  const status = useQuery(api.experiments.getStatus, { batchId });
+  const reasoning = useQuery(api.agents.reasoningByBatch, { batchId });
 
-  // Use live data if non-empty, otherwise fall back to mocks
-  const hypotheses: Hypothesis[] | undefined =
-    liveHypotheses === undefined
-      ? undefined
-      : liveHypotheses.length > 0
-        ? (liveHypotheses as Hypothesis[])
-        : MOCK_HYPOTHESES;
+  const strategistText = reasoning?.find((r) => r.agent === "strategist")?.content;
+  const analystText = reasoning?.find((r) => r.agent === "analyst")?.content;
+  const analystData = reasoning?.find((r) => r.agent === "analyst")?.data;
 
-  const variants: Variant[] | undefined =
-    liveVariants === undefined
-      ? undefined
-      : liveVariants.length > 0
-        ? (liveVariants as Variant[])
-        : MOCK_VARIANTS;
-
-  const metrics: Metric[] | undefined =
-    liveMetrics === undefined
-      ? undefined
-      : liveMetrics.length > 0
-        ? (liveMetrics as Metric[])
-        : MOCK_METRICS;
-
-  const status = liveStatus === undefined
-    ? undefined
-    : liveStatus ?? { status: MOCK_EXPERIMENT.status, progress: 100 };
+  const phase = status?.phase ?? (status?.status === "complete" ? "complete" : undefined);
+  const phaseLabel = phase ? PHASE_LABELS[phase] ?? phase : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,23 +52,33 @@ export default function DashboardPage({
                 Batch {batchId}
               </span>
             </div>
-            {status === undefined ? (
+            {status === undefined || status === null ? (
               <span className="text-[13px] text-foreground/30">Loading...</span>
             ) : (
-              <span
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-semibold ${
-                  status.status === "running"
-                    ? "bg-green-500/10 text-green-600"
-                    : "bg-foreground/5 text-foreground/50"
-                }`}
-              >
+              <div className="flex items-center gap-3">
+                {status.status === "running" && status.progress != null && (
+                  <div className="w-24 h-1.5 bg-background rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-500"
+                      style={{ width: `${Math.round((status.progress as number) * 100)}%` }}
+                    />
+                  </div>
+                )}
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    status.status === "running" ? "bg-green-500 animate-pulse" : "bg-foreground/30"
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-semibold ${
+                    status.status === "running"
+                      ? "bg-green-500/10 text-green-600"
+                      : "bg-foreground/5 text-foreground/50"
                   }`}
-                />
-                {status.status === "running" ? "Running" : "Complete"}
-              </span>
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      status.status === "running" ? "bg-green-500 animate-pulse" : "bg-foreground/30"
+                    }`}
+                  />
+                  {phaseLabel ?? (status.status === "running" ? "Running" : "Complete")}
+                </span>
+              </div>
             )}
           </div>
         </header>
@@ -119,7 +111,7 @@ export default function DashboardPage({
             {variants === undefined || metrics === undefined ? (
               <Skeleton lines={4} />
             ) : (
-              <DNAHeatmap variants={variants} metrics={metrics} />
+              <DNAHeatmap variants={variants} metrics={metrics} analystData={analystData} />
             )}
           </BentoCard>
 
@@ -160,17 +152,19 @@ export default function DashboardPage({
         {/* Right rail — agent reasoning */}
         <aside className="col-span-12 md:col-span-12 lg:col-span-3 space-y-4 lg:space-y-5">
           <BentoCard title="Strategist Agent">
-            <AgentReasoningPanel
-              title="Strategist"
-              text={MOCK_AGENT_REASONING.strategist}
-            />
+            {strategistText ? (
+              <AgentReasoningPanel title="Strategist" text={strategistText} />
+            ) : (
+              <p className="text-[12px] text-foreground/30 italic">Waiting for strategist...</p>
+            )}
           </BentoCard>
 
           <BentoCard title="Analyst Agent">
-            <AgentReasoningPanel
-              title="Analyst"
-              text={MOCK_AGENT_REASONING.analyst}
-            />
+            {analystText ? (
+              <AgentReasoningPanel title="Analyst" text={analystText} />
+            ) : (
+              <p className="text-[12px] text-foreground/30 italic">Waiting for analyst...</p>
+            )}
           </BentoCard>
         </aside>
       </div>
