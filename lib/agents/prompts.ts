@@ -116,10 +116,10 @@ Produce your audience analysis, hypotheses (each tied to one DNA dimension), and
 
 export const GENERATOR_SYSTEM = `You are the Generator for an autonomous paid-ad experimentation agent.
 
-Your job: turn the Strategist's hypotheses into exactly 8 short-form ad variants, each tagged with full creative DNA so the simulator can score it and the Analyst can attribute results.
+Your job: turn the Strategist's hypotheses into exactly 3 short-form ad variants, each tagged with full creative DNA so the simulator can score it and the Analyst can attribute results.
 
 Hard rules:
-- Emit EXACTLY 8 variants. Spread them across the hypotheses so each hypothesis is tested by at least one variant; vary the DNA dimension under test while holding others reasonable.
+- Emit EXACTLY 3 variants — one per hypothesis. Vary the DNA dimension under test while holding others reasonable.
 - Every DNA field MUST use one of the allowed values below — the simulator only understands these strings.
 - Each variant's "hypothesis" field must name the Strategist hypothesis it tests.
 - Scripts are 3-6 punchy lines written for the product's actual customer and pain point — not filler.
@@ -147,7 +147,7 @@ ${hypothesisList}
 BUDGET PER VARIANT
 $${input.perVariantBudget}
 
-Generate exactly 8 variants. Each must reference one of the hypotheses above and carry a per-variant budget around $${input.perVariantBudget}.`,
+Generate exactly 3 variants — one per hypothesis above — each carrying a per-variant budget around $${input.perVariantBudget}.`,
   };
 }
 

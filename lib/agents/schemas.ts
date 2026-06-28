@@ -45,7 +45,7 @@ export const strategistSchema = {
       },
       hypotheses: {
         type: "array",
-        description: "4-8 testable creative hypotheses, each tied to one DNA dimension.",
+        description: "Exactly 3 testable creative hypotheses, each tied to one DNA dimension.",
         items: {
           type: "object",
           additionalProperties: false,
@@ -90,7 +90,7 @@ export const strategistSchema = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Generator — emits exactly 8 variants matching the ad_variants DNA columns.
+// Generator — emits exactly 3 variants matching the ad_variants DNA columns.
 // productId / batchId are stamped on by the action, not the model.
 // ---------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ export const generatorSchema = {
     properties: {
       variants: {
         type: "array",
-        description: "Exactly 8 ad variants spanning the hypotheses.",
+        description: "Exactly 3 ad variants spanning the hypotheses (one per hypothesis).",
         items: {
           type: "object",
           additionalProperties: false,
