@@ -4,10 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { MOCK_PRODUCT, MOCK_BATCH_ID } from "@/lib/mockData";
+import { MOCK_PRODUCT } from "@/lib/mockData";
 import type { ProductInput } from "@/lib/types";
-
-const USE_MOCKS = !api.products?.create;
 
 const GOALS = [
   { value: "maximize_trials", label: "Maximize trial signups" },
@@ -32,6 +30,7 @@ const EMPTY_FORM: ProductInput = {
 export default function ProductInputForm() {
   const router = useRouter();
   const createProduct = useMutation(api.products.create);
+  const startBatch = useMutation(api.experiments.startBatch);
   const [form, setForm] = useState<ProductInput>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductInput, string>>>({});
@@ -69,16 +68,9 @@ export default function ProductInputForm() {
 
     setSubmitting(true);
     try {
-      if (USE_MOCKS) {
-        // Simulate a short delay, then navigate with the mock batch
-        await new Promise((r) => setTimeout(r, 500));
-        router.push(`/launch/${MOCK_BATCH_ID}`);
-      } else {
-        await createProduct(form);
-        // TODO: once Nori ships experiments.startBatch, call it here
-        // and navigate to the real batchId instead of mock
-        router.push(`/launch/${MOCK_BATCH_ID}`);
-      }
+      const { productId } = await createProduct(form);
+      const batchId = await startBatch({ productId });
+      router.push(`/launch/${batchId}`);
     } finally {
       setSubmitting(false);
     }
