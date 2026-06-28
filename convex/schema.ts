@@ -43,8 +43,10 @@ export default defineSchema({
   experiment_runs: defineTable({
     productId: v.id("products"),
     batchId: v.string(),
-    status: v.union(v.literal("running"), v.literal("complete")),
+    status: v.union(v.literal("running"), v.literal("complete"), v.literal("failed")),
     startedAt: v.number(),
+    // Set when an agent action fails after retries (N4); surfaced via getStatus.
+    error: v.optional(v.string()),
   })
     .index("by_batch", ["batchId"])
     .index("by_product", ["productId"]),

@@ -18,7 +18,7 @@ import { v } from "convex/values";
 
 const TOTAL_DAYS = 3;
 
-type Phase = "strategizing" | "generating" | "simulating" | "analyzing" | "complete";
+type Phase = "strategizing" | "generating" | "simulating" | "analyzing" | "complete" | "failed";
 
 export const startBatch = mutation({
   args: { productId: v.id("products") },
@@ -116,7 +116,10 @@ export const getStatus = query({
     // "analyzing".
     let phase: Phase;
     let progress: number;
-    if (run.status === "complete") {
+    if (run.status === "failed") {
+      phase = "failed";
+      progress = 0;
+    } else if (run.status === "complete") {
       phase = "complete";
       progress = 1;
     } else if (allDaysIn) {
@@ -136,6 +139,6 @@ export const getStatus = query({
       progress = 0.1;
     }
 
-    return { status: run.status, phase, progress };
+    return { status: run.status, phase, progress, error: run.error ?? null };
   },
 });

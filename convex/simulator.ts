@@ -231,3 +231,15 @@ export const markComplete = internalMutation({
     if (run) await ctx.db.patch(run._id, { status: "complete" });
   },
 });
+
+/** Mark a run failed and record the error (N4) so the UI can stop spinning. */
+export const markFailed = internalMutation({
+  args: { batchId: v.string(), error: v.string() },
+  handler: async (ctx, args) => {
+    const run = await ctx.db
+      .query("experiment_runs")
+      .withIndex("by_batch", (q) => q.eq("batchId", args.batchId))
+      .first();
+    if (run) await ctx.db.patch(run._id, { status: "failed", error: args.error });
+  },
+});

@@ -13,7 +13,7 @@
  * (maxRetries), satisfying the rate-limit requirement; anything else surfaces.
  */
 
-import { query, internalAction, internalMutation } from "./_generated/server";
+import { query, internalAction, internalMutation, type ActionCtx } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import OpenAI from "openai";
@@ -73,26 +73,39 @@ type AnalystResult = {
 type JsonSchema = { name: string; strict: boolean; schema: Record<string, unknown> };
 
 /**
- * One structured-output call. Returns parsed JSON of type T. Errors (after the
- * SDK's automatic retries) are allowed to surface — we don't swallow them.
+ * One structured-output call. Returns parsed JSON of type T.
+ *
+ * If the OpenAI call fails after the SDK's automatic retries (or returns junk),
+ * we mark the run "failed" with the error message so the UI can stop spinning
+ * (N4), then RE-THROW so the failure still surfaces in logs and halts the loop
+ * chain (the next step is only scheduled on success). We record-and-rethrow
+ * rather than swallow — consistent with CLAUDE.md.
  */
 async function callStructured<T>(
+  ctx: ActionCtx,
+  batchId: string,
   system: string,
   user: string,
   schema: JsonSchema,
 ): Promise<T> {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4 });
-  const resp = await client.chat.completions.create({
-    model: AGENT_MODEL,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    response_format: { type: "json_schema", json_schema: schema },
-  });
-  const content = resp.choices[0]?.message?.content;
-  if (!content) throw new Error("OpenAI returned empty content");
-  return JSON.parse(content) as T;
+  try {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4 });
+    const resp = await client.chat.completions.create({
+      model: AGENT_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_schema", json_schema: schema },
+    });
+    const content = resp.choices[0]?.message?.content;
+    if (!content) throw new Error("OpenAI returned empty content");
+    return JSON.parse(content) as T;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await ctx.runMutation(internal.simulator.markFailed, { batchId, error: message });
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +149,13 @@ export const runStrategist = internalAction({
       goal: product.goal,
       priorBrief,
     });
-    const result = await callStructured<StrategistResult>(system, user, strategistSchema);
+    const result = await callStructured<StrategistResult>(
+      ctx,
+      args.batchId,
+      system,
+      user,
+      strategistSchema,
+    );
 
     await ctx.runMutation(internal.agents.insertHypotheses, {
       productId: args.productId,
@@ -183,7 +202,13 @@ export const runGenerator = internalAction({
       hypotheses,
       perVariantBudget: args.perVariantBudget,
     });
-    const result = await callStructured<GeneratorResult>(system, user, generatorSchema);
+    const result = await callStructured<GeneratorResult>(
+      ctx,
+      args.batchId,
+      system,
+      user,
+      generatorSchema,
+    );
 
     await ctx.runMutation(internal.agents.insertVariants, {
       productId: args.productId,
@@ -210,7 +235,13 @@ export const runAnalyst = internalAction({
     const metrics = await ctx.runQuery(api.metrics.liveMetrics, { batchId: args.batchId });
 
     const { system, user } = buildAnalystPrompt({ product, variants, metrics });
-    const result = await callStructured<AnalystResult>(system, user, analystSchema);
+    const result = await callStructured<AnalystResult>(
+      ctx,
+      args.batchId,
+      system,
+      user,
+      analystSchema,
+    );
 
     await ctx.runMutation(internal.agents.insertReasoning, {
       batchId: args.batchId,
