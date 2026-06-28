@@ -6,11 +6,11 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
 import HypothesisList from "@/components/HypothesisList";
-import VariantCard from "@/components/VariantCard";
 import MetricsChart from "@/components/MetricsChart";
 import AgentReasoningPanel from "@/components/AgentReasoningPanel";
 import DNAHeatmap from "@/components/DNAHeatmap";
 import BudgetAllocator from "@/components/BudgetAllocator";
+import CampaignTimeline from "@/components/CampaignTimeline";
 
 const PHASE_LABELS: Record<string, string> = {
   strategizing: "Strategizing...",
@@ -133,30 +133,56 @@ export default function DashboardPage({
         </div>
       )}
 
-      {/* Bento grid dashboard */}
+      {/* Main content — timeline + sidebar */}
       <div className="grid grid-cols-12 gap-4 lg:gap-5 p-4 lg:p-6">
-        {/* Left rail — hypotheses + budget */}
-        <aside className="col-span-12 md:col-span-6 lg:col-span-3 space-y-4 lg:space-y-5">
-          <BentoCard title="Hypotheses">
-            {hypotheses === undefined ? (
-              <Skeleton lines={4} />
-            ) : (
-              <HypothesisList hypotheses={hypotheses} />
-            )}
-          </BentoCard>
+        {/* Timeline — the main story */}
+        <main className="col-span-12 lg:col-span-8 space-y-5">
+          {/* Strategist reasoning — appears first */}
+          {strategistText && (
+            <BentoCard title="Strategist Hypothesis">
+              <AgentReasoningPanel title="Strategist" text={strategistText} />
+            </BentoCard>
+          )}
 
-          <BentoCard title="Budget Allocation">
+          {/* Hypotheses */}
+          {hypotheses !== undefined && hypotheses.length > 0 && (
+            <BentoCard title="Hypotheses Being Tested">
+              <HypothesisList hypotheses={hypotheses} />
+            </BentoCard>
+          )}
+
+          {/* Campaign Timeline — the core iterative view */}
+          {variants !== undefined && metrics !== undefined ? (
+            <BentoCard title="Campaign Timeline" accent>
+              <CampaignTimeline
+                variants={variants}
+                metrics={metrics}
+                allocations={allocations as Array<{ day: number; variantId: string; share: number; dailyBudget: number; status: "scale" | "explore" | "kill" }>}
+                analystText={analystText}
+              />
+            </BentoCard>
+          ) : (
+            <BentoCard title="Campaign Timeline" accent>
+              <div className="flex flex-col items-center py-12 text-foreground/30">
+                <div className="w-12 h-12 rounded-full bg-background animate-pulse mb-4" />
+                <p className="text-[13px] font-medium">Generating reels...</p>
+                <p className="text-[11px] mt-1">Variants will appear here one by one</p>
+              </div>
+            </BentoCard>
+          )}
+        </main>
+
+        {/* Sidebar — analytics panels */}
+        <aside className="col-span-12 lg:col-span-4 space-y-4 lg:space-y-5">
+          <BentoCard title="Budget Reallocation">
             {variants === undefined || metrics === undefined ? (
               <Skeleton lines={3} />
             ) : (
               <BudgetAllocator variants={variants} metrics={metrics} banditAllocations={allocations} />
             )}
           </BentoCard>
-        </aside>
 
-        {/* Main column — heatmap + chart + variants */}
-        <main className="col-span-12 md:col-span-6 lg:col-span-6 space-y-4 lg:space-y-5">
-          <BentoCard title="Creative DNA Heatmap" accent>
+          <BentoCard title="Creative DNA Heatmap">
             {variants === undefined || metrics === undefined ? (
               <Skeleton lines={4} />
             ) : (
@@ -164,7 +190,7 @@ export default function DashboardPage({
             )}
           </BentoCard>
 
-          <BentoCard title="Performance Metrics">
+          <BentoCard title="Performance Trends">
             {metrics === undefined || variants === undefined ? (
               <Skeleton lines={5} />
             ) : (
@@ -172,47 +198,12 @@ export default function DashboardPage({
             )}
           </BentoCard>
 
-          <BentoCard title="Ad Variants">
-            {variants === undefined || metrics === undefined ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="animate-pulse rounded-[16px] bg-background h-52" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {variants.map((v) => {
-                  const variantMetrics = metrics.filter(
-                    (m) => m.variantId === v._id
-                  );
-                  return (
-                    <VariantCard
-                      key={v._id}
-                      variant={v}
-                      metrics={variantMetrics}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </BentoCard>
-        </main>
-
-        {/* Right rail — agent reasoning */}
-        <aside className="col-span-12 md:col-span-12 lg:col-span-3 space-y-4 lg:space-y-5">
-          <BentoCard title="Strategist Agent">
-            {strategistText ? (
-              <AgentReasoningPanel title="Strategist" text={strategistText} />
-            ) : (
-              <p className="text-[12px] text-foreground/30 italic">Waiting for strategist...</p>
-            )}
-          </BentoCard>
-
+          {/* Analyst reasoning — appears at the end */}
           <BentoCard title="Analyst Agent">
             {analystText ? (
               <AgentReasoningPanel title="Analyst" text={analystText} />
             ) : (
-              <p className="text-[12px] text-foreground/30 italic">Waiting for analyst...</p>
+              <p className="text-[12px] text-foreground/30 italic">Waiting for campaign to complete...</p>
             )}
           </BentoCard>
         </aside>

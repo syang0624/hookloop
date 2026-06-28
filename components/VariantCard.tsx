@@ -28,9 +28,13 @@ function DnaPill({ label, value }: { label: string; value: string }) {
 export default function VariantCard({
   variant,
   metrics,
+  revealDelay = 0,
+  compact = false,
 }: {
   variant: Variant;
   metrics: Metric[];
+  revealDelay?: number;
+  compact?: boolean;
 }) {
   const sorted = metrics.slice().sort((a, b) => a.day - b.day);
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
@@ -40,13 +44,14 @@ export default function VariantCard({
 
   return (
     <div
-      className={`rounded-[20px] p-5 text-sm transition-all duration-300 hover:shadow-bento ${
+      className={`rounded-[20px] p-5 text-sm transition-all duration-700 hover:shadow-bento animate-fadeIn ${
         isDead
           ? "opacity-50 bg-red-50"
           : isWinning
             ? "bg-green-50 ring-2 ring-green-400/30"
             : "bg-background"
       }`}
+      style={{ animationDelay: `${revealDelay}ms`, animationFillMode: "backwards" }}
     >
       {/* Header: hook type + status */}
       <div className="flex items-center justify-between mb-3">
@@ -116,11 +121,13 @@ export default function VariantCard({
         <p className="text-[12px] text-red-400 mb-4">No impressions — variant killed</p>
       ) : null}
 
-      {/* Kill/scale rules */}
-      <div className="text-[11px] text-foreground/30 space-y-0.5">
-        <p>Kill: {variant.killRule}</p>
-        <p>Scale: {variant.scaleRule}</p>
-      </div>
+      {/* Kill/scale rules — hidden in compact mode */}
+      {!compact && (
+        <div className="text-[11px] text-foreground/30 space-y-0.5">
+          <p>Kill: {variant.killRule}</p>
+          <p>Scale: {variant.scaleRule}</p>
+        </div>
+      )}
     </div>
   );
 }
