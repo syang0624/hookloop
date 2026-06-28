@@ -1,4 +1,5 @@
 import type { Variant, Metric } from "@/lib/types";
+import ReelPreview from "./ReelPreview";
 
 function StatusBadge({ status }: { status: "winning" | "running" | "killed" }) {
   const styles = {
@@ -80,11 +81,15 @@ export default function VariantCard({
         <div className="w-full aspect-[9/16] rounded-[14px] mb-3 bg-background animate-pulse flex items-center justify-center text-[12px] text-foreground/40">
           generating reel...
         </div>
-      ) : variant.videoStatus === "failed" ? (
-        <div className="w-full aspect-[9/16] rounded-[14px] mb-3 bg-background flex items-center justify-center text-[12px] text-foreground/30">
-          reel unavailable
-        </div>
-      ) : null}
+      ) : (
+        <ReelPreview
+          hookType={variant.hookType}
+          voice={variant.voice}
+          script={variant.script}
+          pacing={variant.pacing}
+          status={status}
+        />
+      )}
 
       {/* Script */}
       <p className="text-foreground/70 text-[13px] leading-relaxed line-clamp-3 mb-3">

@@ -12,16 +12,21 @@ type BanditRow = {
   status: "scale" | "explore" | "kill";
 };
 
-type DayData = {
-  day: number;
+type RoundData = {
+  round: number;
+  phase: "test" | "optimize" | "winner";
+  title: string;
+  subtitle: string;
+  variants: Variant[];
   metrics: Metric[];
-  alive: Variant[];
   killed: Variant[];
   scaled: Variant[];
   avgCac: number;
   avgCpc: number;
   totalSpend: number;
   totalConversions: number;
+  cacDelta: number | null;
+  insight: string | null;
 };
 
 export default function CampaignTimeline({
@@ -35,9 +40,26 @@ export default function CampaignTimeline({
   allocations?: BanditRow[];
   analystText?: string;
 }) {
-  const days = useMemo((): DayData[] => {
+  // Group variants by hypothesis for round-based reveal
+  const hypothesisGroups = useMemo(() => {
+    const groups = new Map<string, Variant[]>();
+    for (const v of variants) {
+      const key = v.hypothesis;
+      const arr = groups.get(key) ?? [];
+      arr.push(v);
+      groups.set(key, arr);
+    }
+    return Array.from(groups.entries());
+  }, [variants]);
+
+  const rounds = useMemo((): RoundData[] => {
     const dayNums = Array.from(new Set(metrics.map((m) => m.day))).sort();
-    return dayNums.map((day) => {
+    if (dayNums.length === 0 && variants.length === 0) return [];
+
+    const result: RoundData[] = [];
+    let prevCac = 0;
+
+    dayNums.forEach((day, di) => {
       const dayMetrics = metrics.filter((m) => m.day === day);
       const dayAllocs = allocations?.filter((a) => a.day === day) ?? [];
 
@@ -47,8 +69,6 @@ export default function CampaignTimeline({
       const scaledIds = new Set(
         dayAllocs.filter((a) => a.status === "scale").map((a) => a.variantId as string),
       );
-
-      // If no bandit data, derive from metrics (0 impressions = killed)
       if (dayAllocs.length === 0) {
         for (const m of dayMetrics) {
           if (m.impressions === 0) killedIds.add(m.variantId as string);
@@ -59,81 +79,99 @@ export default function CampaignTimeline({
       const killed = variants.filter((v) => killedIds.has(v._id as string));
       const scaled = variants.filter((v) => scaledIds.has(v._id as string));
 
-      const activeMetrics = dayMetrics.filter((m) => m.impressions > 0);
-      const totalSpend = activeMetrics.reduce((s, m) => s + m.spend, 0);
-      const totalConversions = activeMetrics.reduce((s, m) => s + m.conversions, 0);
+      const active = dayMetrics.filter((m) => m.impressions > 0);
+      const totalSpend = active.reduce((s, m) => s + m.spend, 0);
+      const totalConversions = active.reduce((s, m) => s + m.conversions, 0);
       const avgCac = totalConversions > 0 ? totalSpend / totalConversions : 0;
-      const totalClicks = activeMetrics.reduce((s, m) => s + m.clicks, 0);
+      const totalClicks = active.reduce((s, m) => s + m.clicks, 0);
       const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+      const cacDelta = prevCac > 0 && avgCac > 0 ? ((avgCac - prevCac) / prevCac * 100) : null;
 
-      return { day, metrics: dayMetrics, alive, killed, scaled, avgCac, avgCpc, totalSpend, totalConversions };
+      const isFirst = di === 0;
+      const isLast = di === dayNums.length - 1;
+
+      let insight: string | null = null;
+      if (killed.length > 0 && !isFirst) {
+        const killedHooks = killed.map((v) => v.hookType).join(", ");
+        const survivorHooks = alive.slice(0, 2).map((v) => `${v.hookType}/${v.voice}`).join(", ");
+        insight = `The ${killedHooks} approach isn't working — CVR too low. Reallocating budget to ${survivorHooks} which show stronger purchase intent.`;
+      }
+      if (scaled.length > 0 && isLast) {
+        const winner = scaled[0];
+        insight = `Found the winner: ${winner.hookType}/${winner.voice} is driving the lowest CAC at $${avgCac.toFixed(2)}. This reel style should be the template for the next campaign.`;
+      }
+
+      result.push({
+        round: di + 1,
+        phase: isFirst ? "test" : isLast ? "winner" : "optimize",
+        title: isFirst
+          ? "Launch Initial Reels"
+          : isLast
+            ? "Best Performers Identified"
+            : `Iteration ${di + 1} — Refining`,
+        subtitle: isFirst
+          ? `Testing ${alive.length} reels across ${hypothesisGroups.length} hypotheses`
+          : isLast
+            ? `${alive.length} survivors from ${variants.length} tested`
+            : `Dropped ${killed.length} underperformers, scaling ${scaled.length > 0 ? scaled.length : "top"} reels`,
+        variants: alive,
+        metrics: dayMetrics,
+        killed,
+        scaled,
+        avgCac,
+        avgCpc,
+        totalSpend,
+        totalConversions,
+        cacDelta,
+        insight,
+      });
+
+      prevCac = avgCac;
     });
-  }, [variants, metrics, allocations]);
 
-  const totalDays = days.length;
+    return result;
+  }, [variants, metrics, allocations, hypothesisGroups.length]);
+
+  // Pre-data: show variants appearing one by one
+  if (variants.length > 0 && rounds.length === 0) {
+    return (
+      <div className="space-y-6">
+        <StepHeader
+          step={1}
+          title="Generating Reels"
+          subtitle="AI is creating ad variants from your hypotheses"
+          phase="test"
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {variants.map((v, i) => (
+            <VariantCard
+              key={v._id}
+              variant={v}
+              metrics={[]}
+              revealDelay={i * 500}
+              compact
+            />
+          ))}
+        </div>
+        <WaitingPulse text="Waiting for campaign data..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Show variants first — staggered reveal */}
-      {variants.length > 0 && days.length === 0 && (
-        <TimelineSection
-          label="Reels Generated"
-          description={`${variants.length} ad variants created from hypotheses`}
-          accent
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {variants.map((v, i) => (
-              <VariantCard
-                key={v._id}
-                variant={v}
-                metrics={[]}
-                revealDelay={i * 400}
-              />
-            ))}
-          </div>
-        </TimelineSection>
-      )}
+    <div className="space-y-0">
+      {rounds.map((r, ri) => (
+        <div key={r.round}>
+          {/* Step header */}
+          <StepHeader step={r.round} title={r.title} subtitle={r.subtitle} phase={r.phase} />
 
-      {/* Day-by-day sections */}
-      {days.map((d, di) => {
-        const prevDay = di > 0 ? days[di - 1] : null;
-        const cacDelta = prevDay && prevDay.avgCac > 0 && d.avgCac > 0
-          ? ((d.avgCac - prevDay.avgCac) / prevDay.avgCac * 100)
-          : null;
-
-        return (
-          <div key={d.day} className="animate-fadeIn" style={{ animationDelay: `${di * 200}ms`, animationFillMode: "backwards" }}>
-            {/* Day header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white text-[14px] font-bold">
-                {d.day}
-              </div>
-              <div>
-                <h3 className="font-display text-[15px] font-bold text-foreground">
-                  Week {d.day}
-                  {d.day === 1 && " — Initial Campaign"}
-                  {d.day === 2 && " — Bandit Optimizing"}
-                  {d.day === totalDays && d.day > 1 && " — Final Results"}
-                </h3>
-                <p className="text-[12px] text-foreground/40">
-                  {d.alive.length} active reels
-                  {d.killed.length > 0 && ` · ${d.killed.length} killed`}
-                  {d.scaled.length > 0 && ` · ${d.scaled.length} scaling`}
-                </p>
-              </div>
-              {cacDelta !== null && (
-                <span className={`ml-auto rounded-full px-3 py-1 text-[11px] font-semibold ${
-                  cacDelta < 0 ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
-                }`}>
-                  CAC {cacDelta > 0 ? "+" : ""}{cacDelta.toFixed(0)}%
-                </span>
-              )}
-            </div>
-
-            {/* Active reels for this day */}
+          {/* Reel grid — staggered */}
+          <div className="ml-5 pl-7 border-l-2 border-primary/10 pb-2">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-              {d.alive.map((v, i) => {
-                const allVm = metrics.filter((m) => (m.variantId as string) === (v._id as string) && m.day <= d.day);
+              {r.variants.map((v, i) => {
+                const allVm = metrics.filter(
+                  (m) => (m.variantId as string) === (v._id as string) && m.day <= r.round,
+                );
                 return (
                   <VariantCard
                     key={v._id}
@@ -146,81 +184,130 @@ export default function CampaignTimeline({
               })}
             </div>
 
-            {/* Day stats bar */}
-            <div className="bg-card rounded-[16px] p-4 flex flex-wrap gap-6 text-[12px] mb-2">
-              <Stat label="Avg CAC" value={`$${d.avgCac.toFixed(2)}`} good={d.avgCac < 4.5} />
-              <Stat label="Avg CPC" value={`$${d.avgCpc.toFixed(2)}`} />
-              <Stat label="Spend" value={`$${d.totalSpend.toFixed(0)}`} />
-              <Stat label="Conversions" value={`${d.totalConversions}`} />
-              <Stat label="Active" value={`${d.alive.length}/${variants.length}`} />
+            {/* Data reaction bar */}
+            <div className="bg-card rounded-[16px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 200}ms`, animationFillMode: "backwards" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-foreground/30">Data Reaction</span>
+                {r.cacDelta !== null && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                    r.cacDelta < 0 ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
+                  }`}>
+                    CAC {r.cacDelta > 0 ? "+" : ""}{r.cacDelta.toFixed(0)}%
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-6 text-[12px]">
+                <Stat label="CPC" value={`$${r.avgCpc.toFixed(2)}`} />
+                <Stat label="CAC" value={`$${r.avgCac.toFixed(2)}`} good={r.avgCac > 0 && r.avgCac < 4.5} />
+                <Stat label="Spend" value={`$${r.totalSpend.toFixed(0)}`} />
+                <Stat label="Conv." value={`${r.totalConversions}`} />
+                <Stat label="Active" value={`${r.variants.length}/${variants.length}`} />
+              </div>
             </div>
 
-            {/* Killed variants callout */}
-            {d.killed.length > 0 && (
-              <div className="bg-red-50 rounded-[14px] p-3 text-[12px] text-red-600 mb-2">
-                <span className="font-semibold">Killed:</span>{" "}
-                {d.killed.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
-                {" — underperforming CVR floor"}
+            {/* Killed callout */}
+            {r.killed.length > 0 && (
+              <div className="bg-red-50 rounded-[14px] p-3 text-[12px] text-red-600 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 400}ms`, animationFillMode: "backwards" }}>
+                <span className="font-semibold">Killed {r.killed.length} reel{r.killed.length > 1 ? "s" : ""}:</span>{" "}
+                {r.killed.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
               </div>
             )}
 
-            {/* Scaled variant callout */}
-            {d.scaled.length > 0 && (
-              <div className="bg-green-50 rounded-[14px] p-3 text-[12px] text-green-600 mb-2">
+            {/* Scaling callout */}
+            {r.scaled.length > 0 && (
+              <div className="bg-green-50 rounded-[14px] p-3 text-[12px] text-green-600 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 500}ms`, animationFillMode: "backwards" }}>
                 <span className="font-semibold">Scaling:</span>{" "}
-                {d.scaled.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
-                {" — top performer, getting more budget"}
+                {r.scaled.map((v) => `${v.hookType}/${v.voice}`).join(", ")}
+                {" — getting more budget"}
               </div>
             )}
 
-            {/* Connecting line to next day */}
-            {di < totalDays - 1 && (
-              <div className="flex items-center gap-2 py-3 pl-5">
-                <div className="w-0.5 h-8 bg-primary/20 rounded-full" />
-                <span className="text-[11px] text-foreground/30 italic">
-                  System learning... reallocating budget based on performance
-                </span>
+            {/* System insight / hypothesis revision */}
+            {r.insight && (
+              <div className="bg-primary/5 rounded-[14px] p-4 mb-3 animate-fadeIn" style={{ animationDelay: `${r.variants.length * 300 + 600}ms`, animationFillMode: "backwards" }}>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-primary/60 mb-1">
+                  {r.phase === "winner" ? "Conclusion" : "Hypothesis Revision"}
+                </p>
+                <p className="text-[13px] text-foreground/70 leading-relaxed">{r.insight}</p>
               </div>
             )}
           </div>
-        );
-      })}
 
-      {/* Analyst insight after all days */}
-      {analystText && days.length > 0 && (
-        <TimelineSection
-          label="Analyst Insight"
-          description="What the system learned from this batch"
-        >
-          <div className="text-[13px] text-foreground/60 whitespace-pre-wrap leading-relaxed">
-            {analystText}
+          {/* Connector between rounds */}
+          {ri < rounds.length - 1 && (
+            <div className="flex items-center gap-3 py-2 ml-5 pl-7">
+              <div className="flex items-center gap-2 text-[11px] text-foreground/25">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="animate-pulse">
+                  <path d="M8 2v8m0 0l-3-3m3 3l3-3M4 14h8" strokeLinecap="round" />
+                </svg>
+                <span className="italic">Revising strategy... generating improved reels</span>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Final analyst summary */}
+      {analystText && rounds.length > 0 && (
+        <div className="mt-6 animate-fadeIn" style={{ animationDelay: "800ms", animationFillMode: "backwards" }}>
+          <StepHeader
+            step={rounds.length + 1}
+            title="Campaign Complete"
+            subtitle="Full analysis of what worked and why"
+            phase="winner"
+          />
+          <div className="ml-5 pl-7 border-l-2 border-green-400/30">
+            <div className="bg-card rounded-[16px] p-5 text-[13px] text-foreground/60 whitespace-pre-wrap leading-relaxed">
+              {analystText}
+            </div>
           </div>
-        </TimelineSection>
+        </div>
+      )}
+
+      {/* No data yet */}
+      {variants.length === 0 && rounds.length === 0 && (
+        <WaitingPulse text="Waiting for reels to be generated..." />
       )}
     </div>
   );
 }
 
-function TimelineSection({
-  label,
-  description,
-  accent,
-  children,
+function StepHeader({
+  step,
+  title,
+  subtitle,
+  phase,
 }: {
-  label: string;
-  description: string;
-  accent?: boolean;
-  children: React.ReactNode;
+  step: number;
+  title: string;
+  subtitle: string;
+  phase: "test" | "optimize" | "winner";
 }) {
+  const colors = {
+    test: "bg-primary text-white",
+    optimize: "bg-amber-500 text-white",
+    winner: "bg-green-500 text-white",
+  };
   return (
-    <div className="animate-fadeIn">
-      <div className="mb-3">
-        <h3 className={`text-[13px] font-bold uppercase tracking-wider ${accent ? "text-primary" : "text-foreground/40"}`}>
-          {label}
-        </h3>
-        <p className="text-[12px] text-foreground/30">{description}</p>
+    <div className="flex items-center gap-3 mb-4 animate-fadeIn">
+      <div className={`flex items-center justify-center w-9 h-9 rounded-full text-[13px] font-bold ${colors[phase]}`}>
+        {step}
       </div>
-      {children}
+      <div>
+        <h3 className="font-display text-[15px] font-bold text-foreground">{title}</h3>
+        <p className="text-[12px] text-foreground/40">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function WaitingPulse({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center py-10 text-foreground/30 animate-pulse">
+      <div className="w-10 h-10 rounded-full bg-primary/10 mb-3 flex items-center justify-center">
+        <div className="w-4 h-4 rounded-full bg-primary/30 animate-ping" />
+      </div>
+      <p className="text-[13px] font-medium">{text}</p>
     </div>
   );
 }
