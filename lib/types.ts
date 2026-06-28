@@ -74,3 +74,23 @@ export type ExperimentRun = {
 };
 
 export type ProductInput = Omit<Product, "_id" | "_creationTime">;
+
+export type HypothesisVerdict = {
+  hypothesis: string;
+  verdict: "confirmed" | "refuted" | "partial";
+  why: string;
+};
+
+export type AnalystData = {
+  winners: string[];
+  losers: string[];
+  perDimensionAttribution: Array<{
+    dimension: string;
+    value: string;
+    cacDeltaPct: number;
+    cpcDeltaPct: number;
+  }>;
+  hypothesisVerdict: HypothesisVerdict[];
+  narrative: string;
+  nextBatchBrief: string;
+};
