@@ -23,6 +23,8 @@ import { allocate, initArm, updateArm } from "../lib/bandit";
 
 const TOTAL_DAYS = 3;
 const DAY_DELAY_MS = 2000;
+const REEL_GATE_INTERVAL_MS = 1500;
+const REEL_GATE_MAX_ATTEMPTS = 200; // ~5 min ceiling, then proceed anyway
 
 // Bandit kill policy. The DNA weights produce CVRs roughly in the 1.5–4% band,
 // all above a flat 0.5% floor — so a flat floor would never kill anything.
@@ -52,6 +54,35 @@ type AllocRecord = {
   dailyBudget: number;
   status: "scale" | "explore" | "kill";
 };
+
+/**
+ * Reel-ready gate. Holds the campaign until every variant's video is resolved
+ * (ready or failed), enforcing the demo's order: reel first, CPC second. Cached
+ * (Coca-Cola) reels are ready on the first check; live Sora reels release the
+ * gate as they complete. A max-attempts ceiling guarantees a stuck Sora job
+ * never deadlocks the demo — we proceed regardless once it's hit.
+ */
+export const awaitReelsThenRun = internalAction({
+  args: { batchId: v.string(), attempt: v.number() },
+  handler: async (ctx, args) => {
+    const variants = await ctx.runQuery(api.variants.listByBatch, { batchId: args.batchId });
+    const allResolved =
+      variants.length > 0 &&
+      variants.every((vr) => vr.videoStatus === "ready" || vr.videoStatus === "failed");
+
+    if (allResolved || args.attempt >= REEL_GATE_MAX_ATTEMPTS) {
+      await ctx.scheduler.runAfter(0, internal.simulator.streamDay, {
+        batchId: args.batchId,
+        day: 1,
+      });
+      return;
+    }
+    await ctx.scheduler.runAfter(REEL_GATE_INTERVAL_MS, internal.simulator.awaitReelsThenRun, {
+      batchId: args.batchId,
+      attempt: args.attempt + 1,
+    });
+  },
+});
 
 /**
  * Entry point (scheduled by the Generator). Kicks off the day-by-day stream.
