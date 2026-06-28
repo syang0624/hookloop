@@ -17,6 +17,7 @@ import { v } from "convex/values";
 import { createSoraProvider } from "../lib/video/sora";
 import { buildVideoPrompt } from "../lib/video/prompt";
 import type { VideoProvider } from "../lib/video/provider";
+import { cachedReelPath } from "../lib/sampleProduct";
 
 // Config. VIDEO_ENABLED is the kill switch if credits run low.
 const VIDEO_ENABLED = true;
@@ -59,11 +60,30 @@ export const patchVariantVideo = internalMutation({
 });
 
 export const generateVariantVideo = internalAction({
-  args: { variantId: v.id("ad_variants"), feedback: v.optional(v.string()) },
+  args: {
+    variantId: v.id("ad_variants"),
+    feedback: v.optional(v.string()),
+    week: v.number(),
+    slot: v.number(),
+    useCached: v.boolean(),
+  },
   handler: async (ctx, args) => {
     if (!VIDEO_ENABLED) return;
     const variant = await ctx.runQuery(internal.video.getVariant, { variantId: args.variantId });
     if (!variant) return;
+
+    // Cached-demo product (Coca-Cola): serve the pre-generated, week-evolving
+    // reel file instead of calling Sora. Marked ready immediately so the
+    // reel-ready gate releases the simulator without waiting on the network.
+    if (args.useCached) {
+      await ctx.runMutation(internal.video.patchVariantVideo, {
+        variantId: args.variantId,
+        videoStatus: "ready",
+        videoUrl: cachedReelPath(args.week, args.slot),
+      });
+      return;
+    }
+
     try {
       const prompt = buildVideoPrompt(variant, args.feedback);
       const { jobId } = await getProvider().startVideo(prompt, {

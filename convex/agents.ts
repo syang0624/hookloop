@@ -28,6 +28,7 @@ import {
   buildGeneratorPrompt,
   buildAnalystPrompt,
 } from "../lib/agents/prompts";
+import { usesCachedReels } from "../lib/sampleProduct";
 
 /** gpt-4o (2024-08-06+) is the first model with strict json_schema support. */
 const AGENT_MODEL = "gpt-4o-2024-08-06";
@@ -221,18 +222,32 @@ export const runGenerator = internalAction({
       variants: result.variants,
     });
 
-    // Fire one video reel per variant — async, parallel, NON-BLOCKING: the loop
-    // proceeds to the simulator immediately regardless of video status. The
-    // prior batch's feedback steers the reels so they improve each loop.
-    for (const variantId of variantIds) {
+    // Derive this batch's 1-based week (its ordinal among the product's runs).
+    const weeks = await ctx.runQuery(api.experiments.weeksByProduct, {
+      productId: args.productId,
+    });
+    const week = weeks.find((w) => w.batchId === args.batchId)?.week ?? 1;
+    const useCached = usesCachedReels(product.name);
+
+    // Fire one video reel per variant — async + parallel. Cached (Coca-Cola)
+    // resolve instantly; live Sora resolves when each job completes. The reel-
+    // ready gate (Task 5) holds the simulator until all are ready/failed, so
+    // CPC never appears before the reel.
+    for (let slot = 0; slot < variantIds.length; slot++) {
       await ctx.scheduler.runAfter(0, internal.video.generateVariantVideo, {
-        variantId,
+        variantId: variantIds[slot],
         feedback: args.videoFeedback,
+        week,
+        slot,
+        useCached,
       });
     }
 
-    // Variants exist — kick off the simulated campaign.
-    await ctx.scheduler.runAfter(0, internal.simulator.runCampaign, { batchId: args.batchId });
+    // Gate the simulator on reels being ready (Task 5), not fire-and-forget.
+    await ctx.scheduler.runAfter(0, internal.simulator.awaitReelsThenRun, {
+      batchId: args.batchId,
+      attempt: 1,
+    });
     return result;
   },
 });

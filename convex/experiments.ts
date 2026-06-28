@@ -18,7 +18,7 @@ import { v } from "convex/values";
 
 const TOTAL_DAYS = 3;
 
-type Phase = "strategizing" | "generating" | "simulating" | "analyzing" | "complete" | "failed";
+type Phase = "strategizing" | "generating" | "generating_video" | "simulating" | "analyzing" | "complete" | "failed";
 
 export const startBatch = mutation({
   args: { productId: v.id("products") },
@@ -128,9 +128,17 @@ export const getStatus = query({
     } else if (metrics.length > 0) {
       phase = "simulating";
       progress = 0.3 + 0.5 * (daysInserted / TOTAL_DAYS);
+    } else if (
+      variants.length > 0 &&
+      !variants.every((vr) => vr.videoStatus === "ready" || vr.videoStatus === "failed")
+    ) {
+      // Reels exist but at least one video is still generating — hold here so
+      // the UI shows "Generating reels" and no metrics leak in early.
+      phase = "generating_video";
+      progress = 0.3;
     } else if (variants.length > 0) {
       phase = "generating";
-      progress = 0.3;
+      progress = 0.35;
     } else if (hypotheses.length > 0) {
       phase = "generating";
       progress = 0.2;
@@ -140,5 +148,51 @@ export const getStatus = query({
     }
 
     return { status: run.status, phase, progress, error: run.error ?? null };
+  },
+});
+
+/**
+ * All of a product's batches in chronological order, each tagged with its
+ * 1-based week index and a summary of its campaign metrics. Used to derive the
+ * video week, drive the cross-week CPC rail, and compute week-over-week deltas.
+ */
+export const weeksByProduct = query({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const runs = await ctx.db
+      .query("experiment_runs")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .collect();
+    runs.sort((a, b) => a.startedAt - b.startedAt);
+
+    const out: Array<{
+      batchId: string;
+      week: number;
+      status: "running" | "complete" | "failed";
+      startedAt: number;
+      avgCpc: number;
+      avgCac: number;
+    }> = [];
+
+    for (let i = 0; i < runs.length; i++) {
+      const run = runs[i];
+      const metrics = await ctx.db
+        .query("campaign_metrics")
+        .withIndex("by_batch", (q) => q.eq("batchId", run.batchId))
+        .collect();
+      const active = metrics.filter((m) => m.impressions > 0);
+      const spend = active.reduce((s, m) => s + m.spend, 0);
+      const clicks = active.reduce((s, m) => s + m.clicks, 0);
+      const conversions = active.reduce((s, m) => s + m.conversions, 0);
+      out.push({
+        batchId: run.batchId,
+        week: i + 1,
+        status: run.status as "running" | "complete" | "failed",
+        startedAt: run.startedAt,
+        avgCpc: clicks > 0 ? Math.round((spend / clicks) * 100) / 100 : 0,
+        avgCac: conversions > 0 ? Math.round((spend / conversions) * 100) / 100 : 0,
+      });
+    }
+    return out;
   },
 });
