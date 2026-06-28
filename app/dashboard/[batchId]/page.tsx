@@ -59,11 +59,15 @@ export default function DashboardPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
+      <header className="border-b bg-white px-6 py-3 shadow-sm">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">HookLoop</h1>
-            <p className="text-sm text-gray-500">Batch {batchId}</p>
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-black tracking-tight">
+              Hook<span className="text-gray-400">Loop</span>
+            </h1>
+            <span className="text-xs text-gray-400 border-l pl-4">
+              Batch {batchId}
+            </span>
           </div>
           {status === undefined ? (
             <span className="text-sm text-gray-400">Loading...</span>
@@ -180,8 +184,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">{title}</h2>
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">{title}</h2>
       {children}
     </div>
   );
