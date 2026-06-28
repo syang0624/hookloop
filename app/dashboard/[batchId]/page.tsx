@@ -57,7 +57,14 @@ function LiveDashboard({ batchId }: { batchId: string }) {
     productId ? { productId } : "skip",
   );
 
-  const parsedAnalyst: AnalystData | null = analystData ? (JSON.parse(analystData) as AnalystData) : null;
+  const parsedAnalyst: AnalystData | null = (() => {
+    if (!analystData) return null;
+    try {
+      return JSON.parse(analystData) as AnalystData;
+    } catch {
+      return null;
+    }
+  })();
   const thisWeek = weeks?.find((w) => w.batchId === batchId) ?? null;
   const weekNumber = thisWeek?.week ?? 1;
   const prevWeek = thisWeek ? weeks?.find((w) => w.week === thisWeek.week - 1) ?? null : null;
