@@ -84,7 +84,17 @@ export function buildStrategistPrompt(input: {
   pastVariants: Variant[];
   pastMetrics: Metric[];
   goal: string;
+  /** The previous batch's Analyst nextBatchBrief — present from batch 2 on. */
+  priorBrief?: string;
 }): AgentMessages {
+  // On batch 2+, the Analyst's brief is the single most important steer — it
+  // already digested the prior numbers into a directive. Lead with it.
+  const briefSection = input.priorBrief
+    ? `DIRECTIVE FROM LAST BATCH'S ANALYST (act on this)
+${input.priorBrief}
+
+`
+    : "";
   return {
     system: STRATEGIST_SYSTEM,
     user: `PRODUCT
@@ -93,7 +103,7 @@ ${describeProduct(input.product)}
 EXPERIMENT GOAL
 ${input.goal}
 
-PRIOR PERFORMANCE (DNA → results)
+${briefSection}PRIOR PERFORMANCE (DNA → results)
 ${describePastPerformance(input.pastVariants, input.pastMetrics)}
 
 Produce your audience analysis, hypotheses (each tied to one DNA dimension), and an experiment plan with CAC/CVR-anchored kill and scale rules.`,

@@ -117,11 +117,24 @@ export const runStrategist = internalAction({
       ? await ctx.runQuery(api.metrics.liveMetrics, { batchId: args.priorBatchId })
       : [];
 
+    // Batch 2+: pull the prior Analyst's nextBatchBrief so it steers this batch.
+    let priorBrief: string | undefined;
+    if (args.priorBatchId) {
+      const reasoning = await ctx.runQuery(api.agents.reasoningByBatch, {
+        batchId: args.priorBatchId,
+      });
+      const analyst = reasoning.find((r) => r.agent === "analyst");
+      if (analyst) {
+        priorBrief = (JSON.parse(analyst.data) as AnalystResult).nextBatchBrief;
+      }
+    }
+
     const { system, user } = buildStrategistPrompt({
       product,
       pastVariants,
       pastMetrics,
       goal: product.goal,
+      priorBrief,
     });
     const result = await callStructured<StrategistResult>(system, user, strategistSchema);
 

@@ -52,6 +52,38 @@ export const startBatch = mutation({
   },
 });
 
+/**
+ * Kick off the NEXT batch, seeded from a completed prior batch. Creates a fresh
+ * batchId + experiment_run and passes priorBatchId to the Strategist, which
+ * pulls the prior batch's performance AND its Analyst nextBatchBrief (N3). This
+ * is the loop closing on itself — batch N+1 learns from batch N.
+ *
+ * TODO(steven): add a "Run Next Batch" trigger on the dashboard that appears
+ * once getStatus.phase === "complete", calling
+ *   startNextBatch({ productId, priorBatchId: currentBatchId })
+ * then routing to the returned new batchId.
+ */
+export const startNextBatch = mutation({
+  args: { productId: v.id("products"), priorBatchId: v.string() },
+  handler: async (ctx, args) => {
+    const batchId = `batch_${crypto.randomUUID()}`;
+    await ctx.db.insert("experiment_runs", {
+      productId: args.productId,
+      batchId,
+      status: "running",
+      startedAt: Date.now(),
+    });
+
+    await ctx.scheduler.runAfter(0, internal.agents.runStrategist, {
+      productId: args.productId,
+      batchId,
+      priorBatchId: args.priorBatchId,
+    });
+
+    return batchId;
+  },
+});
+
 export const getStatus = query({
   args: { batchId: v.string() },
   handler: async (ctx, args) => {
