@@ -38,6 +38,14 @@ export default defineSchema({
     budget: v.number(),
     killRule: v.string(),
     scaleRule: v.string(),
+    // Video reel (generated async by convex/video.ts). All optional, so existing
+    // inserts and the rest of the loop are unaffected. Steven renders videoUrl.
+    videoStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("ready"), v.literal("failed")),
+    ),
+    videoUrl: v.optional(v.string()),
+    videoJobId: v.optional(v.string()),
+    videoError: v.optional(v.string()),
   }).index("by_batch", ["batchId"]),
 
   experiment_runs: defineTable({

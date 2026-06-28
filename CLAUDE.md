@@ -101,7 +101,9 @@ hypotheses: {
 ad_variants: {
   productId, batchId,
   hookType, scriptType, voice, music, pacing, cta, audience,
-  script, hypothesis, budget, killRule, scaleRule
+  script, hypothesis, budget, killRule, scaleRule,
+  videoStatus?: "pending" | "ready" | "failed",   // generated async (Sora)
+  videoUrl?, videoJobId?, videoError?
 }
 
 experiment_runs: {
@@ -141,6 +143,15 @@ These are the only Convex functions the frontend calls. If the frontend needs a 
 - `agents.runAnalyst`
 - `simulator.runCampaign`
 
+### Video reels (Nori → Steven)
+
+`ad_variants` rows now carry `videoStatus` (`"pending"|"ready"|"failed"`),
+`videoUrl`, `videoError` — generated async after the Generator and streamed in
+via the existing `variants.listByBatch` (no new query). `TODO(steven)`:
+`VariantCard` renders `<video src={variant.videoUrl} autoPlay muted loop playsInline>`
+when `videoStatus === "ready"`, a "generating reel…" spinner on `"pending"`, and
+the current text-only card as fallback on `"failed"`/absent.
+
 ---
 
 ## Conventions
@@ -158,12 +169,18 @@ These are the only Convex functions the frontend calls. If the frontend needs a 
 ## What we are NOT building (out of scope)
 
 - Live Meta / TikTok API integration (architected for, never called)
-- Live Veo / Sora video generation
 - Auth, billing, multi-tenancy
 - Brand safety classifier
-- Real video assembly (FFmpeg) — use a placeholder video player
+- Real video assembly (FFmpeg / editing / captions / music). Sora returns
+  finished raw clips; no manual assembly.
 
 If you find yourself building any of the above, stop.
+
+> SCOPE UPDATE (2026-06-28): Per-variant **Sora video reels are now in scope** —
+> generated async as one step in the loop, directed by the prior batch's Analyst
+> feedback so the reels improve each loop. This deliberately reverses the earlier
+> "no video generation / use a placeholder" rule. The thesis still holds: the
+> self-improving loop is the point; video is one async step, never blocking it.
 
 ---
 

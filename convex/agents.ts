@@ -15,6 +15,7 @@
 
 import { query, internalAction, internalMutation, type ActionCtx } from "./_generated/server";
 import { api, internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import OpenAI from "openai";
 import {
@@ -172,11 +173,14 @@ export const runStrategist = internalAction({
       data: JSON.stringify(result),
     });
 
-    // Hand off to the Generator with the budget the plan called for.
+    // Hand off to the Generator with the budget the plan called for. priorBrief
+    // (prior batch's nextBatchBrief, undefined on batch 1) rides along so the
+    // video reels can be directed by what won last loop.
     await ctx.scheduler.runAfter(0, internal.agents.runGenerator, {
       productId: args.productId,
       batchId: args.batchId,
       perVariantBudget: result.experimentPlan.perVariantBudget,
+      videoFeedback: priorBrief,
     });
     return result;
   },
@@ -191,6 +195,7 @@ export const runGenerator = internalAction({
     productId: v.id("products"),
     batchId: v.string(),
     perVariantBudget: v.number(),
+    videoFeedback: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const product = await ctx.runQuery(api.products.getById, { productId: args.productId });
@@ -210,11 +215,21 @@ export const runGenerator = internalAction({
       generatorSchema,
     );
 
-    await ctx.runMutation(internal.agents.insertVariants, {
+    const variantIds = await ctx.runMutation(internal.agents.insertVariants, {
       productId: args.productId,
       batchId: args.batchId,
       variants: result.variants,
     });
+
+    // Fire one video reel per variant — async, parallel, NON-BLOCKING: the loop
+    // proceeds to the simulator immediately regardless of video status. The
+    // prior batch's feedback steers the reels so they improve each loop.
+    for (const variantId of variantIds) {
+      await ctx.scheduler.runAfter(0, internal.video.generateVariantVideo, {
+        variantId,
+        feedback: args.videoFeedback,
+      });
+    }
 
     // Variants exist — kick off the simulated campaign.
     await ctx.scheduler.runAfter(0, internal.simulator.runCampaign, { batchId: args.batchId });
@@ -302,13 +317,17 @@ export const insertVariants = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
+    const ids: Array<Id<"ad_variants">> = [];
     for (const variant of args.variants) {
-      await ctx.db.insert("ad_variants", {
-        productId: args.productId,
-        batchId: args.batchId,
-        ...variant,
-      });
+      ids.push(
+        await ctx.db.insert("ad_variants", {
+          productId: args.productId,
+          batchId: args.batchId,
+          ...variant,
+        }),
+      );
     }
+    return ids;
   },
 });
 
