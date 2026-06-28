@@ -74,19 +74,22 @@ export const getStatus = query({
       .query("campaign_metrics")
       .withIndex("by_batch", (q) => q.eq("batchId", args.batchId))
       .collect();
-    const analystDone = await ctx.db
-      .query("agent_reasoning")
-      .withIndex("by_batch", (q) => q.eq("batchId", args.batchId))
-      .filter((q) => q.eq(q.field("agent"), "analyst"))
-      .first();
 
     const daysInserted = new Set(metrics.map((m) => m.day)).size;
+    const allDaysIn = daysInserted >= TOTAL_DAYS;
 
+    // Phase derivation. Because the Analyst is now what marks the run complete
+    // (N2), a "complete" status always implies analysis is done; the window
+    // where all days are simulated but the Analyst is still working shows as
+    // "analyzing".
     let phase: Phase;
     let progress: number;
     if (run.status === "complete") {
-      phase = analystDone ? "complete" : "analyzing";
-      progress = analystDone ? 1 : 0.9;
+      phase = "complete";
+      progress = 1;
+    } else if (allDaysIn) {
+      phase = "analyzing";
+      progress = 0.9;
     } else if (metrics.length > 0) {
       phase = "simulating";
       progress = 0.3 + 0.5 * (daysInserted / TOTAL_DAYS);

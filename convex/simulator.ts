@@ -154,7 +154,9 @@ export const streamDay = internalAction({
         day: args.day + 1,
       });
     } else {
-      await ctx.runMutation(internal.simulator.markComplete, { batchId: args.batchId });
+      // Final day in. Hand off to the Analyst — it is the one that marks the
+      // run complete, once its reasoning is written (N2). The run stays
+      // "running" through analysis so the UI shows an "analyzing" phase.
       await ctx.scheduler.runAfter(0, internal.agents.runAnalyst, {
         productId,
         batchId: args.batchId,

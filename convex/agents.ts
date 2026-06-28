@@ -205,6 +205,11 @@ export const runAnalyst = internalAction({
       content: result.narrative,
       data: JSON.stringify(result),
     });
+
+    // The Analyst is the final step of the loop — only now is the run complete
+    // (N2). Marking it here, after the reasoning is persisted, means a
+    // "complete" status always implies the analysis is available.
+    await ctx.runMutation(internal.simulator.markComplete, { batchId: args.batchId });
     return result;
   },
 });
