@@ -77,12 +77,17 @@ Currently errors surface but there's no recovery path. Add:
 ### Task N5 — Validate end-to-end with real OpenAI key
 
 Set `OPENAI_API_KEY` in `.env.local` and run the full loop. Verify:
-- [ ] Strategist produces 3+ hypotheses with real reasoning
-- [ ] Generator produces exactly 8 variants with varied DNA
-- [ ] Simulator streams metrics day-by-day with 2s delays
-- [ ] Analyst references actual variant performance, not generic platitudes
-- [ ] `perDimensionAttribution` has real delta percentages
-- [ ] Bandit kills at least one low-CVR variant (if the DNA weights produce one)
+- [x] Strategist produces 3+ hypotheses with real reasoning (got 7)
+- [x] Generator produces exactly 8 variants with varied DNA (8; 5 hookTypes, 4 voices/ctas/audiences)
+- [x] Simulator streams metrics day-by-day with 2s delays (24 rows over days 1-3)
+- [x] Analyst references actual variant performance, not generic platitudes (names variant ids + DNA)
+- [x] `perDimensionAttribution` has real delta percentages (29 entries, e.g. benefit CAC +180%, shock-stat -45%)
+- [x] Bandit kills at least one low-CVR variant (day 2: 2 kills, day 3: 3 kills)
+
+Validated 2026-06-27 against batch `batch_c69c64b7-...` (product "FocusFlow") on the
+dev deployment. Budget concentration was clean: day 1 even 12% each → day 3 five
+survivors splitting 31/22/19/16/12% with three killed. KILL_FRACTION 0.55 held up on
+real LLM variants (not winner-take-all), so no retune.
 
 ---
 
@@ -93,13 +98,15 @@ Set `OPENAI_API_KEY` in `.env.local` and run the full loop. Verify:
 - [x] DNA weights documented with comments citing rationale
 - [x] No randomness without a seed (seeded PRNG in simulator + bandit)
 - [x] OpenAI calls handle rate limits + retries (maxRetries: 4)
-- [ ] Analyst attribution names specific dimensions (needs live test — Task N5)
+- [x] Analyst attribution names specific dimensions (verified live in N5)
 
 ---
 
-## Definition of "Phase 2 done"
+## Definition of "Phase 2 done" — ALL DONE (2026-06-27)
 
-- [ ] Bandit reallocates budget between days (killed variants get 0 impressions)
-- [ ] Full loop verified with real OpenAI key
-- [ ] Error states handled gracefully (failed runs don't hang the UI)
-- [ ] Batch 2 looping works (strategist seeds from prior batch performance)
+- [x] Bandit reallocates budget between days (killed variants get 0 impressions) — N1
+- [x] Full loop verified with real OpenAI key — N5
+- [x] Error states handled gracefully (failed runs don't hang the UI) — N4
+- [x] Batch 2 looping works (strategist seeds from prior batch performance) — N3
+  (Wired backend-side; needs Steven's "Run Next Batch" UI trigger — see TODO(steven)
+  in experiments.startNextBatch.)
