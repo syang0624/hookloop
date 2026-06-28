@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export default function ReelModal({
   open,
@@ -19,6 +20,10 @@ export default function ReelModal({
   script: string;
   killed?: boolean;
 }) {
+  // Portal target only exists in the browser; gate on mount for SSR safety.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -28,11 +33,15 @@ export default function ReelModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  // Render to document.body via a portal. The reel tiles for killed variants
+  // carry opacity-50, and CSS opacity dims every descendant — including a
+  // fixed-position modal. Portaling out of the card escapes that (and any
+  // overflow/transform), so the popup is always full-opacity and readable.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn"
       onClick={onClose}
     >
       <div
@@ -77,6 +86,7 @@ export default function ReelModal({
           <p className="text-[12px] text-foreground/60 leading-relaxed">&ldquo;{script}&rdquo;</p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
