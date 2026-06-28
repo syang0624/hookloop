@@ -95,7 +95,7 @@ export default function DashboardPage({
       {/* Bento grid dashboard */}
       <div className="grid grid-cols-12 gap-4 lg:gap-5 p-4 lg:p-6">
         {/* Left rail — hypotheses + budget */}
-        <aside className="col-span-12 lg:col-span-3 space-y-4 lg:space-y-5">
+        <aside className="col-span-12 md:col-span-6 lg:col-span-3 space-y-4 lg:space-y-5">
           <BentoCard title="Hypotheses">
             {hypotheses === undefined ? (
               <Skeleton lines={4} />
@@ -114,7 +114,7 @@ export default function DashboardPage({
         </aside>
 
         {/* Main column — heatmap + chart + variants */}
-        <main className="col-span-12 lg:col-span-6 space-y-4 lg:space-y-5">
+        <main className="col-span-12 md:col-span-6 lg:col-span-6 space-y-4 lg:space-y-5">
           <BentoCard title="Creative DNA Heatmap" accent>
             {variants === undefined || metrics === undefined ? (
               <Skeleton lines={4} />
@@ -158,7 +158,7 @@ export default function DashboardPage({
         </main>
 
         {/* Right rail — agent reasoning */}
-        <aside className="col-span-12 lg:col-span-3 space-y-4 lg:space-y-5">
+        <aside className="col-span-12 md:col-span-12 lg:col-span-3 space-y-4 lg:space-y-5">
           <BentoCard title="Strategist Agent">
             <AgentReasoningPanel
               title="Strategist"

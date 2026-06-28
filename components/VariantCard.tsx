@@ -72,7 +72,7 @@ export default function VariantCard({
       </p>
 
       {/* DNA grid */}
-      <div className="grid grid-cols-5 gap-1.5 mb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mb-4">
         <DnaPill label="Voice" value={variant.voice} />
         <DnaPill label="Music" value={variant.music} />
         <DnaPill label="Pacing" value={variant.pacing} />

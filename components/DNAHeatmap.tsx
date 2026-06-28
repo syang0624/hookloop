@@ -81,88 +81,70 @@ export default function DNAHeatmap({
     return `rgb(${Math.round(255 - s * 0)}, ${Math.round(149 - s * 90)}, ${Math.round(50 - s * 2)})`;
   }
 
-  const cellW = 90;
-  const cellH = 52;
-  const labelW = 80;
-  const labelH = 24;
-  const svgW = labelW + voiceTypes.length * cellW;
-  const svgH = labelH + hookTypes.length * cellH;
-
   const hoveredCell =
     hovered !== null
       ? grid.get(`${hookTypes[hovered.row]}::${voiceTypes[hovered.col]}`)
       : null;
 
+  // Grid columns: 1 label col + N voice cols
+  const gridCols = `80px repeat(${voiceTypes.length}, 1fr)`;
+
   return (
     <div>
-      <div className="overflow-x-auto">
-        <svg width={svgW} height={svgH} className="text-xs">
-          {/* Column headers (voices) */}
-          {voiceTypes.map((v, ci) => (
-            <text
-              key={v}
-              x={labelW + ci * cellW + cellW / 2}
-              y={16}
-              textAnchor="middle"
-              className="fill-gray-500 text-[11px] font-medium"
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: gridCols }}
+      >
+        {/* Top-left empty cell */}
+        <div />
+
+        {/* Column headers */}
+        {voiceTypes.map((v) => (
+          <div
+            key={v}
+            className="text-center text-[11px] font-semibold text-foreground/40 pb-1"
+          >
+            {v}
+          </div>
+        ))}
+
+        {/* Rows */}
+        {hookTypes.map((hook, ri) => (
+          <>
+            {/* Row label */}
+            <div
+              key={`label-${hook}`}
+              className="flex items-center justify-end pr-2 text-[11px] font-semibold text-foreground/40"
             >
-              {v}
-            </text>
-          ))}
+              {hook}
+            </div>
 
-          {/* Rows */}
-          {hookTypes.map((hook, ri) => (
-            <g key={hook}>
-              {/* Row label */}
-              <text
-                x={labelW - 8}
-                y={labelH + ri * cellH + cellH / 2 + 4}
-                textAnchor="end"
-                className="fill-gray-500 text-[11px] font-medium"
-              >
-                {hook}
-              </text>
+            {/* Cells */}
+            {voiceTypes.map((voice, ci) => {
+              const cell = grid.get(`${hook}::${voice}`);
+              const cac = cell?.avgCac ?? 0;
+              const isHovered = hovered?.row === ri && hovered?.col === ci;
 
-              {/* Cells */}
-              {voiceTypes.map((voice, ci) => {
-                const cell = grid.get(`${hook}::${voice}`);
-                const cac = cell?.avgCac ?? 0;
-                const isHovered = hovered?.row === ri && hovered?.col === ci;
-
-                return (
-                  <g
-                    key={voice}
-                    onMouseEnter={() => setHovered({ row: ri, col: ci })}
-                    onMouseLeave={() => setHovered(null)}
-                    className="cursor-pointer"
-                  >
-                    <rect
-                      x={labelW + ci * cellW + 2}
-                      y={labelH + ri * cellH + 2}
-                      width={cellW - 4}
-                      height={cellH - 4}
-                      rx={12}
-                      fill={cacToColor(cac)}
-                      stroke={isHovered ? "#111" : "transparent"}
-                      strokeWidth={isHovered ? 2 : 0}
-                      className="transition-all duration-200"
-                    />
-                    {cac > 0 && (
-                      <text
-                        x={labelW + ci * cellW + cellW / 2}
-                        y={labelH + ri * cellH + cellH / 2 + 4}
-                        textAnchor="middle"
-                        className="fill-gray-800 text-[11px] font-semibold pointer-events-none"
-                      >
-                        ${cac.toFixed(0)}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
-          ))}
-        </svg>
+              return (
+                <div
+                  key={`${hook}-${voice}`}
+                  onMouseEnter={() => setHovered({ row: ri, col: ci })}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`rounded-[12px] h-12 flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                    isHovered ? "ring-2 ring-foreground scale-105" : ""
+                  }`}
+                  style={{ backgroundColor: cacToColor(cac) }}
+                >
+                  {cac > 0 && (
+                    <span className="text-[12px] font-bold text-foreground/80">
+                      ${cac.toFixed(0)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        ))}
       </div>
 
       {/* Hover tooltip */}

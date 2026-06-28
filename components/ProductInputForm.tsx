@@ -72,12 +72,12 @@ export default function ProductInputForm() {
       if (USE_MOCKS) {
         // Simulate a short delay, then navigate with the mock batch
         await new Promise((r) => setTimeout(r, 500));
-        router.push(`/dashboard/${MOCK_BATCH_ID}`);
+        router.push(`/launch/${MOCK_BATCH_ID}`);
       } else {
         await createProduct(form);
         // TODO: once Nori ships experiments.startBatch, call it here
         // and navigate to the real batchId instead of mock
-        router.push(`/dashboard/${MOCK_BATCH_ID}`);
+        router.push(`/launch/${MOCK_BATCH_ID}`);
       }
     } finally {
       setSubmitting(false);
