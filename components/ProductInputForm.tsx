@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { MOCK_PRODUCT, MOCK_BATCH_ID, SAMPLE_PRODUCT_NAME } from "@/lib/mockData";
+import { MOCK_PRODUCT } from "@/lib/mockData";
 import type { ProductInput } from "@/lib/types";
 
 const GOALS = [
@@ -68,12 +68,6 @@ export default function ProductInputForm() {
 
     setSubmitting(true);
     try {
-      // Sample data: skip API, go straight to demo dashboard
-      if (form.name === SAMPLE_PRODUCT_NAME) {
-        await new Promise((r) => setTimeout(r, 400));
-        router.push(`/launch/${MOCK_BATCH_ID}`);
-        return;
-      }
       const { productId } = await createProduct(form);
       const batchId = await startBatch({ productId });
       router.push(`/launch/${batchId}`);

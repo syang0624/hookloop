@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Hypothesis, Variant, Metric } from "@/lib/types";
-import { MOCK_BATCH_ID } from "@/lib/mockData";
-import { DEMO_CAMPAIGN, DEMO_OVERALL } from "@/lib/demoReels";
-import DemoDashboard from "@/components/DemoDashboard";
 import CampaignTimeline from "@/components/CampaignTimeline";
 import AgentReasoningPanel from "@/components/AgentReasoningPanel";
 import BudgetAllocator from "@/components/BudgetAllocator";
@@ -30,10 +27,6 @@ export default function DashboardPage({
   params: { batchId: string };
 }) {
   const { batchId } = params;
-  if (batchId === MOCK_BATCH_ID) {
-    return <DemoDashboard weeks={DEMO_CAMPAIGN} overall={DEMO_OVERALL} />;
-  }
-
   return <LiveDashboard batchId={batchId} />;
 }
 

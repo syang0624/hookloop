@@ -82,9 +82,7 @@ async function generateReel(reel) {
     // Start Sora job
     const video = await client.videos.create({
       prompt: reel.prompt,
-      model: "sora",
-      size: "720x1280",
-      duration: 5,
+      model: "sora-2",
     });
     const jobId = video.id;
     console.log(`    Job ${jobId} created, polling...`);
