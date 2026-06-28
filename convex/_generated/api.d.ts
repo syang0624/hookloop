@@ -8,10 +8,12 @@
  * @module
  */
 
+import type * as agents from "../agents.js";
 import type * as experiments from "../experiments.js";
 import type * as hypotheses from "../hypotheses.js";
 import type * as metrics from "../metrics.js";
 import type * as products from "../products.js";
+import type * as simulator from "../simulator.js";
 import type * as variants from "../variants.js";
 
 import type {
@@ -21,10 +23,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agents: typeof agents;
   experiments: typeof experiments;
   hypotheses: typeof hypotheses;
   metrics: typeof metrics;
   products: typeof products;
+  simulator: typeof simulator;
   variants: typeof variants;
 }>;
 

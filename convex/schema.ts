@@ -45,6 +45,23 @@ export default defineSchema({
     batchId: v.string(),
     status: v.union(v.literal("running"), v.literal("complete")),
     startedAt: v.number(),
+  })
+    .index("by_batch", ["batchId"])
+    .index("by_product", ["productId"]),
+
+  // ADDED by Nori (not in the original CLAUDE.md schema): backs the live
+  // agent-reasoning panel. Stores each agent's human-readable stream plus the
+  // full structured output as a JSON string. Flagged for Steven.
+  agent_reasoning: defineTable({
+    batchId: v.string(),
+    agent: v.union(
+      v.literal("strategist"),
+      v.literal("generator"),
+      v.literal("analyst"),
+    ),
+    content: v.string(),
+    data: v.string(),
+    createdAt: v.number(),
   }).index("by_batch", ["batchId"]),
 
   campaign_metrics: defineTable({
