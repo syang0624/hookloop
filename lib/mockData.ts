@@ -12,17 +12,17 @@ export const MOCK_BATCH_ID = "batch_001";
 export const MOCK_PRODUCT: Product = {
   _id: fakeId("products", 1),
   _creationTime: Date.now(),
-  name: "Reachly",
-  landingUrl: "https://reachly.io",
-  valueProp: "AI-powered cold email that actually gets replies. 3x response rates in 14 days.",
-  targetCustomer: "B2B SaaS founders and sales teams (10-50 employees) doing outbound",
-  pricing: "$99/mo starter, $299/mo growth, $799/mo scale",
-  painPoint: "Cold emails land in spam or get ignored. SDRs waste hours writing personalized outreach that still gets 1-2% reply rates.",
-  dailyBudget: 200,
-  totalBudget: 2000,
-  maxCPC: 4.5,
-  targetCAC: 85,
-  goal: "Maximize trial signups while keeping CAC under $85",
+  name: "Coca-Cola",
+  landingUrl: "https://coca-cola.com",
+  valueProp: "The world's most refreshing soft drink. Share a Coke and feel the moment.",
+  targetCustomer: "Gen Z and Millennials (18-34) who consume social media daily and buy beverages at convenience stores, restaurants, and grocery",
+  pricing: "$1.99 20oz bottle, $6.99 12-pack, $2.49 fountain drink",
+  painPoint: "Young consumers are switching to energy drinks, sparkling water, and wellness beverages. Coca-Cola needs to stay culturally relevant and top-of-mind on social feeds where attention spans are 3 seconds.",
+  dailyBudget: 5000,
+  totalBudget: 50000,
+  maxCPC: 1.20,
+  targetCAC: 4.50,
+  goal: "Maximize brand engagement and drive convenience store purchases among 18-34 year olds",
 };
 
 export const MOCK_HYPOTHESES: Hypothesis[] = [
@@ -31,27 +31,27 @@ export const MOCK_HYPOTHESES: Hypothesis[] = [
     _creationTime: Date.now(),
     productId: MOCK_PRODUCT._id,
     batchId: MOCK_BATCH_ID,
-    text: "Pain-led hooks outperform benefit-led hooks for B2B SaaS",
+    text: "Nostalgia hooks outperform trend-chasing hooks for Coca-Cola",
     reasoning:
-      "B2B buyers are more motivated by avoiding loss (wasted SDR hours, missed quota) than by gain. A hook that opens with the pain of low reply rates should drive higher CTR and lower CAC than one that leads with '3x your replies'.",
+      "Coca-Cola's strongest brand asset is emotional memory — summer BBQs, road trips, sharing with friends. A hook that opens with a nostalgic moment should drive higher engagement and purchase intent than one that tries to ride the latest TikTok trend.",
   },
   {
     _id: fakeId("hypotheses", 2),
     _creationTime: Date.now(),
     productId: MOCK_PRODUCT._id,
     batchId: MOCK_BATCH_ID,
-    text: "Founder-voice ads convert better than polished narrator ads",
+    text: "UGC-style creator content converts better than polished brand ads",
     reasoning:
-      "Startup buyers trust founders over brands. A casual, direct-to-camera founder voice should feel more authentic and drive higher CVR than a professional narrator, even if CTR is similar.",
+      "Gen Z trusts creators over brands. A casual, phone-shot video of someone grabbing a Coke at a gas station should feel more authentic and drive higher CVR than a studio-produced brand spot, even if the brand ad gets more initial views.",
   },
   {
     _id: fakeId("hypotheses", 3),
     _creationTime: Date.now(),
     productId: MOCK_PRODUCT._id,
     batchId: MOCK_BATCH_ID,
-    text: "Fast-paced cuts with metric callouts reduce CAC vs. slow-burn storytelling",
+    text: "Sound-first ASMR hooks (cap twist, pour, fizz) stop the scroll better than music-driven intros",
     reasoning:
-      "Short attention spans on social feeds reward quick cuts. Showing concrete numbers (reply rate %, hours saved) in rapid succession should hook analytical B2B buyers faster than narrative arcs.",
+      "Coca-Cola's product has iconic sounds — the bottle cap pop, the fizz, the pour over ice. ASMR content performs well on TikTok/Reels. Leading with the sound of opening a Coke should hook viewers in the first second before they scroll past.",
   },
 ];
 
@@ -63,16 +63,16 @@ export const MOCK_VARIANTS: Variant[] = [
     batchId: MOCK_BATCH_ID,
     hookType: "pain-point",
     scriptType: "problem-solution",
-    voice: "founder",
+    voice: "customer",
     music: "minimal-ambient",
     pacing: "fast",
-    cta: "Start free trial",
-    audience: "SaaS founders 25-45",
-    script: "Your SDRs are sending 200 cold emails a day. How many replies? Probably 3. Reachly uses AI to write emails that sound like a human wrote them for each prospect. Our users see 3x reply rates in the first two weeks. Stop burning your sales team out.",
+    cta: "Grab a Coke",
+    audience: "Gen Z 18-24",
+    script: "It's 2pm. You're crashing. The energy drink isn't hitting anymore. You know what actually works? A cold Coca-Cola. No jitters. No crash. Just that feeling. Stop overthinking your afternoon pick-me-up.",
     hypothesis: MOCK_HYPOTHESES[0].text,
-    budget: 50,
-    killRule: "Kill if CAC > $120 after day 2",
-    scaleRule: "Scale 2x if CAC < $70 and CVR > 2%",
+    budget: 12500,
+    killRule: "Kill if CAC > $8 after day 2",
+    scaleRule: "Scale 2x if CAC < $3.50 and CVR > 3%",
   },
   {
     _id: fakeId("ad_variants", 2),
@@ -84,13 +84,13 @@ export const MOCK_VARIANTS: Variant[] = [
     voice: "narrator",
     music: "upbeat-electronic",
     pacing: "medium",
-    cta: "See it in action",
-    audience: "Sales leaders & VPs",
-    script: "97% of cold emails never get a reply. Watch what happens when we plug Reachly into a real sales pipeline. Step 1: import your leads. Step 2: AI researches each prospect. Step 3: personalized emails go out. Result: 3x more meetings booked.",
+    cta: "Find Coke near you",
+    audience: "Millennials 25-34",
+    script: "1.9 billion Coca-Colas are enjoyed every single day. Here's why: open, pour, listen to that fizz, take the first sip. There's a reason this has been the world's favorite drink for 138 years. Some things just don't need to change.",
     hypothesis: MOCK_HYPOTHESES[0].text,
-    budget: 25,
-    killRule: "Kill if CAC > $120 after day 2",
-    scaleRule: "Scale 2x if CAC < $70 and CVR > 2%",
+    budget: 6250,
+    killRule: "Kill if CAC > $8 after day 2",
+    scaleRule: "Scale 2x if CAC < $3.50 and CVR > 3%",
   },
   {
     _id: fakeId("ad_variants", 3),
@@ -99,16 +99,16 @@ export const MOCK_VARIANTS: Variant[] = [
     batchId: MOCK_BATCH_ID,
     hookType: "question",
     scriptType: "problem-solution",
-    voice: "founder",
+    voice: "customer",
     music: "none",
     pacing: "fast",
-    cta: "Try free for 14 days",
-    audience: "SaaS founders 25-45",
-    script: "What if your cold emails actually got replies? I built Reachly because my sales team was drowning in manual outreach. Now AI handles the personalization and my team focuses on closing. It took us from 2% to 8% reply rates.",
+    cta: "Share a Coke",
+    audience: "Gen Z 18-24",
+    script: "When's the last time a drink actually made you smile? Not a protein shake. Not a wellness tonic. Just a cold Coke with someone you like. We've been doing this for over a century. Maybe there's a reason.",
     hypothesis: MOCK_HYPOTHESES[1].text,
-    budget: 25,
-    killRule: "Kill if CAC > $110 after day 2",
-    scaleRule: "Scale 2x if CAC < $65 and CVR > 2.5%",
+    budget: 6250,
+    killRule: "Kill if CAC > $7 after day 2",
+    scaleRule: "Scale 2x if CAC < $3 and CVR > 3.5%",
   },
   {
     _id: fakeId("ad_variants", 4),
@@ -117,16 +117,16 @@ export const MOCK_VARIANTS: Variant[] = [
     batchId: MOCK_BATCH_ID,
     hookType: "contrarian",
     scriptType: "before-after",
-    voice: "founder",
+    voice: "customer",
     music: "minimal-ambient",
     pacing: "medium",
-    cta: "Start free trial",
-    audience: "SDRs and AEs",
-    script: "Personalization is a lie. At least the way most teams do it. Swapping {first_name} isn't personal. Reachly reads your prospect's LinkedIn, recent posts, and company news, then writes an email only a human could have written. Before: 2% replies. After: 9%.",
+    cta: "Grab a Coke",
+    audience: "Millennials 25-34",
+    script: "Everyone's drinking adaptogenic mushroom water now. Cool. I'm at a taco truck with a glass-bottle Coke and I'm having a better time than all of them. Before: overcomplicated everything. After: just drink what tastes good.",
     hypothesis: MOCK_HYPOTHESES[1].text,
-    budget: 25,
-    killRule: "Kill if CAC > $100 after day 2",
-    scaleRule: "Scale 2x if CAC < $60 and CVR > 3%",
+    budget: 6250,
+    killRule: "Kill if CAC > $6.50 after day 2",
+    scaleRule: "Scale 2x if CAC < $3 and CVR > 4%",
   },
   {
     _id: fakeId("ad_variants", 5),
@@ -138,13 +138,13 @@ export const MOCK_VARIANTS: Variant[] = [
     voice: "customer",
     music: "upbeat-electronic",
     pacing: "medium",
-    cta: "Get 3x more replies",
-    audience: "SaaS founders 25-45",
-    script: "I was about to fire my SDR team. Not because they were bad — because cold email was broken. Then we tried Reachly. First week: reply rates went from 1.5% to 6%. Second week: 8%. Now we book 40 demos a month from outbound alone.",
+    cta: "Find Coke near you",
+    audience: "Gen Z 18-24",
+    script: "I tried every wellness drink on TikTok. Mushroom coffee, chlorophyll water, sea moss gel. None of them made me feel the way a freezing cold Coke does on a hot day. Sometimes the classics are the move.",
     hypothesis: MOCK_HYPOTHESES[1].text,
-    budget: 25,
-    killRule: "Kill if CAC > $120 after day 2",
-    scaleRule: "Scale 2x if CAC < $70 and CVR > 2%",
+    budget: 6250,
+    killRule: "Kill if CAC > $8 after day 2",
+    scaleRule: "Scale 2x if CAC < $3.50 and CVR > 3%",
   },
   {
     _id: fakeId("ad_variants", 6),
@@ -156,13 +156,13 @@ export const MOCK_VARIANTS: Variant[] = [
     voice: "narrator",
     music: "minimal-ambient",
     pacing: "fast",
-    cta: "Start free trial",
-    audience: "Sales leaders & VPs",
-    script: "Sales teams waste 68% of their time on emails that never get opened. Reachly's AI writes cold emails that sound human, reference real prospect activity, and land in the primary inbox. Teams using Reachly see 3x reply rates and 2x more meetings.",
+    cta: "Grab a Coke",
+    audience: "Millennials 25-34",
+    script: "The sound of a Coca-Cola opening has been recognized by 94% of people worldwide. No other product on earth has that. The pop. The fizz. The pour. You already know exactly how it tastes. That's not marketing. That's memory.",
     hypothesis: MOCK_HYPOTHESES[2].text,
-    budget: 15,
-    killRule: "Kill if CAC > $130 after day 2",
-    scaleRule: "Scale 2x if CAC < $75 and CVR > 2%",
+    budget: 3750,
+    killRule: "Kill if CAC > $9 after day 2",
+    scaleRule: "Scale 2x if CAC < $4 and CVR > 2.5%",
   },
   {
     _id: fakeId("ad_variants", 7),
@@ -171,16 +171,16 @@ export const MOCK_VARIANTS: Variant[] = [
     batchId: MOCK_BATCH_ID,
     hookType: "question",
     scriptType: "demo-walkthrough",
-    voice: "founder",
+    voice: "customer",
     music: "none",
     pacing: "slow",
-    cta: "See it in action",
-    audience: "SDRs and AEs",
-    script: "Want to see the email that booked us a meeting with Stripe's head of sales? Here it is. Reachly wrote it in 4 seconds. It referenced their Q3 earnings call and a LinkedIn post from last Tuesday. That's not a template. That's AI that actually understands your prospect.",
+    cta: "Share a Coke",
+    audience: "Gen Z 18-24",
+    script: "*psssht* *fizzzzzz* *pour over ice* *first sip* ... You heard all of that in your head, didn't you? That's Coca-Cola. You don't need us to tell you. You already know.",
     hypothesis: MOCK_HYPOTHESES[2].text,
-    budget: 20,
-    killRule: "Kill if CAC > $110 after day 2",
-    scaleRule: "Scale 2x if CAC < $65 and CVR > 2.5%",
+    budget: 5000,
+    killRule: "Kill if CAC > $7 after day 2",
+    scaleRule: "Scale 2x if CAC < $3 and CVR > 3.5%",
   },
   {
     _id: fakeId("ad_variants", 8),
@@ -192,13 +192,13 @@ export const MOCK_VARIANTS: Variant[] = [
     voice: "customer",
     music: "upbeat-electronic",
     pacing: "fast",
-    cta: "Try free for 14 days",
-    audience: "SaaS founders 25-45",
-    script: "Everyone told me AI email tools are spammy. I believed them until I saw Reachly's output side by side with what my best SDR wrote. I couldn't tell the difference. Neither could our prospects. 6 months later: 3x pipeline, same team size.",
+    cta: "Grab a Coke",
+    audience: "Gen Z 18-24",
+    script: "My nutritionist said cut out soda. So I did. For 3 months I drank sparkling water that tasted like someone whispered the word 'lime' near it. Then I had a Coke at a barbecue and remembered what happiness tastes like. Balance is real.",
     hypothesis: MOCK_HYPOTHESES[2].text,
-    budget: 15,
-    killRule: "Kill if CAC > $120 after day 2",
-    scaleRule: "Scale 2x if CAC < $70 and CVR > 2%",
+    budget: 3750,
+    killRule: "Kill if CAC > $8 after day 2",
+    scaleRule: "Scale 2x if CAC < $3.50 and CVR > 3%",
   },
 ];
 
@@ -286,38 +286,38 @@ export const MOCK_EXPERIMENT: ExperimentRun = {
 };
 
 export const MOCK_AGENT_REASONING = {
-  strategist: `Analyzing Reachly's positioning in the B2B cold-email space...
+  strategist: `Analyzing Coca-Cola's positioning for Gen Z and Millennial social ads...
 
-The core tension: cold email has a reputation problem. Most tools promise "personalization" but deliver mail-merge with {first_name} tokens. Reachly's genuine AI personalization is a real differentiator, but the market is skeptical.
+The core tension: Coca-Cola is the most recognized brand on Earth, but young consumers are drifting toward "wellness" beverages — energy drinks, kombucha, sparkling water. The brand doesn't have an awareness problem. It has a relevance problem. The question isn't "do they know Coca-Cola?" — it's "does Coca-Cola feel like their drink?"
 
 Three hypotheses to test:
 
-1. PAIN-LED vs. BENEFIT-LED HOOKS
-B2B buyers are loss-averse. "Your SDRs are wasting 68% of their time" should outperform "Get 3x more replies." Testing pain-point and contrarian hooks against statistic and question hooks.
+1. NOSTALGIA vs. TREND-CHASING
+Coca-Cola's strongest asset is emotional memory. Testing whether hooks that tap into universal moments (summer, road trips, first sips) outperform hooks that try to ride current TikTok aesthetics. The risk with trends: they expire in weeks. Nostalgia is evergreen.
 
-2. FOUNDER VOICE vs. POLISHED PRODUCTION
-The startup audience trusts authenticity. A founder talking direct-to-camera with no music should feel more credible than a narrator with upbeat production. Testing across voice and music dimensions.
+2. UGC CREATOR STYLE vs. POLISHED BRAND PRODUCTION
+Gen Z has ad blindness for anything that looks produced. A phone-shot video of someone grabbing a Coke at a gas station might outperform a studio spot with the same message. Testing customer/creator voice against narrator voice.
 
-3. PACING AND PROOF
-Fast cuts with concrete metrics (reply rates, meetings booked) vs. slow-burn storytelling. The B2B audience is analytical — numbers should win.
+3. SOUND-FIRST ASMR HOOKS
+Coca-Cola has one of the most iconic product sounds in the world — the cap pop, the fizz, the pour. ASMR content performs exceptionally on short-form video. Leading with the sound (no music, no voice) might stop the scroll faster than any visual hook.
 
-Allocating budget: 50/200 to the strongest hypothesis (pain + founder), 25 each to variants testing individual dimensions, 15-20 to exploratory combinations.`,
-  analyst: `Campaign complete. 3 days, 8 variants, $2,000 budget.
+Allocating budget: $12,500 to the strongest hypothesis combo (pain-point + customer + fast), $6,250 each to dimension-testing variants, $3,750-5,000 to exploratory sound-first variants.`,
+  analyst: `Campaign complete. 3 days, 8 variants, $50,000 budget.
 
-WINNER: Variant 1 (pain-point hook + founder voice + fast pacing)
-- Day 3 CAC: $70.59 — well under the $85 target
-- CTR climbed from 4.2% to 4.8% across days — creative isn't fatiguing
-- CVR hit 3.4% by day 3 — highest in the batch
+WINNER: Variant 4 (contrarian hook + customer voice + before-after)
+- Day 3 CAC: $2.85 — well under the $4.50 target
+- CTR climbed from 4.4% to 4.9% across days — the "mushroom water" angle resonated
+- CVR hit 3.0% by day 3 — highest in the batch
 
-KEY FINDING: The pain-point + founder combination is 2.3x more efficient than statistic + narrator (Variant 2, killed on day 2 with $120+ CAC). This confirms Hypothesis 1.
+KEY FINDING: The contrarian + customer combination is 2.1x more efficient than statistic + narrator (Variant 2, killed on day 2 with $7+ CAC). Gen Z responds to irreverent, anti-wellness-culture messaging delivered by real people, not brands. This confirms Hypothesis 2.
 
-SURPRISING: Variant 4 (contrarian + founder + before-after) was the #2 performer. The contrarian hook "Personalization is a lie" paired with a founder voice created an authenticity signal that drove strong CVR. Consider this a new hypothesis for Batch 2.
+SURPRISING: Variant 7 (ASMR sound-first, slow pacing, no music) was the #2 performer with $3.10 CAC. The "*psssht* *fizzzzzz*" opening stopped the scroll — 4.3% CTR with the highest watch-through rate in the batch. Sound-first is a real creative dimension for Coca-Cola.
 
-KILLED: Variants 2 and 6 (both narrator voice). Narrator consistently underperformed founder and customer voices — the polished production read as "ad" rather than "advice."
+KILLED: Variants 2 and 6 (both narrator voice). The narrator voice consistently read as "corporate ad" to the target demo. Polished production is actively harmful for this audience.
 
 RECOMMENDATION FOR BATCH 2:
-- Double down on pain-point and contrarian hooks with founder voice
-- Test customer testimonial + contrarian as a new combination
-- Drop narrator voice entirely
-- Explore "slow" pacing with founder voice (untested combination)`,
+- Double down on contrarian hooks with customer/creator voice
+- Expand ASMR sound-first to fast pacing (untested combination)
+- Test "summer nostalgia" visuals with customer voice (merging H1 + H2)
+- Drop narrator voice entirely — it's the anti-pattern for this demo`,
 };

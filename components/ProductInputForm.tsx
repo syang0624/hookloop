@@ -76,7 +76,7 @@ export default function ProductInputForm() {
     }
   }
 
-  function prefillReachly() {
+  function prefillSample() {
     setForm({
       name: MOCK_PRODUCT.name,
       landingUrl: MOCK_PRODUCT.landingUrl,
@@ -98,10 +98,10 @@ export default function ProductInputForm() {
       {/* Dev helper */}
       <button
         type="button"
-        onClick={prefillReachly}
+        onClick={prefillSample}
         className="text-[13px] text-primary font-medium hover:text-primary/80 transition-colors"
       >
-        Prefill with Reachly sample data
+        Prefill with Coca-Cola sample data
       </button>
 
       {/* Group 1: Product Details */}
@@ -113,7 +113,7 @@ export default function ProductInputForm() {
             type="text"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
-            placeholder="e.g. Reachly"
+            placeholder="e.g. Coca-Cola"
             className={inputClass(errors.name)}
           />
         </Field>
