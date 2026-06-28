@@ -171,10 +171,11 @@ export default function CampaignTimeline({
           {/* Reel grid — staggered */}
           <div className="ml-5 pl-7 border-l-2 border-primary/10 pb-2">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-              {r.variants.map((v, i) => {
+              {[...r.variants, ...r.killed].map((v, i) => {
                 const allVm = metrics.filter(
                   (m) => (m.variantId as string) === (v._id as string) && m.day <= r.round,
                 );
+                const killed = r.killed.some((k) => k._id === v._id);
                 return (
                   <VariantCard
                     key={v._id}
@@ -182,6 +183,7 @@ export default function CampaignTimeline({
                     metrics={allVm}
                     revealDelay={i * 300}
                     compact
+                    killedByBandit={killed}
                   />
                 );
               })}

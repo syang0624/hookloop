@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import type { Variant, Metric } from "@/lib/types";
 import ReelPreview from "./ReelPreview";
+import ReelModal from "./ReelModal";
 
 function StatusBadge({ status }: { status: "winning" | "running" | "killed" }) {
   const styles = {
@@ -32,18 +36,22 @@ export default function VariantCard({
   revealDelay = 0,
   compact = false,
   cachedVideoPath,
+  killedByBandit,
 }: {
   variant: Variant;
   metrics: Metric[];
   revealDelay?: number;
   compact?: boolean;
   cachedVideoPath?: string;
+  killedByBandit?: boolean;
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
   const sorted = metrics.slice().sort((a, b) => a.day - b.day);
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
-  const isDead = latest !== null && latest.impressions === 0;
-  const isWinning = latest !== null && !isDead && latest.cac > 0 && latest.cac < 80;
+  const isDead = killedByBandit || (latest !== null && latest.impressions === 0);
+  const isWinning = !isDead && latest !== null && latest.cac > 0 && latest.cac < 80;
   const status = isDead ? "killed" as const : isWinning ? "winning" as const : "running" as const;
+  const videoSrc = cachedVideoPath ?? (variant.videoStatus === "ready" ? variant.videoUrl : undefined);
 
   return (
     <div
@@ -69,38 +77,49 @@ export default function VariantCard({
         <StatusBadge status={status} />
       </div>
 
-      {/* Video reel — prefer cached local file, then Convex URL, then preview */}
-      {cachedVideoPath ? (
-        <video
-          src={cachedVideoPath}
-          className="w-full rounded-[14px] mb-3 aspect-[9/16] object-cover bg-background"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-      ) : variant.videoStatus === "ready" && variant.videoUrl ? (
-        <video
-          src={variant.videoUrl}
-          className="w-full rounded-[14px] mb-3 aspect-[9/16] object-cover bg-background"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-      ) : variant.videoStatus === "pending" ? (
-        <div className="w-full aspect-[9/16] rounded-[14px] mb-3 bg-background animate-pulse flex items-center justify-center text-[12px] text-foreground/40">
-          generating reel...
+      {/* Video reel — click to open with audio. Killed reels stay visible,
+          dimmed, with a CUT overlay so the cut is obvious. */}
+      <div
+        className="relative mb-3 cursor-pointer group"
+        onClick={() => setModalOpen(true)}
+      >
+        {videoSrc ? (
+          <video
+            src={videoSrc}
+            className={`w-full rounded-[14px] aspect-[9/16] object-cover bg-background ${
+              isDead ? "grayscale opacity-50" : ""
+            }`}
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+        ) : variant.videoStatus === "pending" ? (
+          <div className="w-full aspect-[9/16] rounded-[14px] bg-background animate-pulse flex items-center justify-center text-[12px] text-foreground/40">
+            generating reel...
+          </div>
+        ) : (
+          <ReelPreview
+            hookType={variant.hookType}
+            voice={variant.voice}
+            script={variant.script}
+            pacing={variant.pacing}
+            status={status}
+          />
+        )}
+
+        {isDead && (
+          <div className="absolute inset-0 rounded-[14px] flex items-center justify-center pointer-events-none">
+            <span className="rounded-full bg-red-500 text-white px-3 py-1 text-[11px] font-bold tracking-wide shadow">
+              CUT
+            </span>
+          </div>
+        )}
+
+        <div className="absolute inset-0 rounded-[14px] bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+          <span className="rounded-full bg-white/90 text-foreground px-3 py-1 text-[11px] font-bold">▶ Play with sound</span>
         </div>
-      ) : (
-        <ReelPreview
-          hookType={variant.hookType}
-          voice={variant.voice}
-          script={variant.script}
-          pacing={variant.pacing}
-          status={status}
-        />
-      )}
+      </div>
 
       {/* Script */}
       <p className="text-foreground/70 text-[13px] leading-relaxed line-clamp-3 mb-3">
@@ -144,6 +163,16 @@ export default function VariantCard({
           <p>Scale: {variant.scaleRule}</p>
         </div>
       )}
+
+      <ReelModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        videoSrc={videoSrc}
+        hookType={variant.hookType}
+        voice={variant.voice}
+        script={variant.script}
+        killed={isDead}
+      />
     </div>
   );
 }
