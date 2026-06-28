@@ -162,7 +162,7 @@ export const analystSchema = {
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["winners", "losers", "perDimensionAttribution", "narrative", "nextBatchBrief"],
+    required: ["winners", "losers", "perDimensionAttribution", "narrative", "nextBatchBrief", "hypothesisVerdict"],
     properties: {
       winners: {
         type: "array",
@@ -192,6 +192,24 @@ export const analystSchema = {
             cpcDeltaPct: {
               type: "number",
               description: "% change in CPC — shown alongside CAC to expose cheap-click traps.",
+            },
+          },
+        },
+      },
+      hypothesisVerdict: {
+        type: "array",
+        description:
+          "One entry per hypothesis tested this week: was it confirmed, refuted, or partial, and why — cite the DNA value and its CAC/CVR impact.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["hypothesis", "verdict", "why"],
+          properties: {
+            hypothesis: { type: "string", description: "Echo the hypothesis text being judged." },
+            verdict: { type: "string", enum: ["confirmed", "refuted", "partial"] },
+            why: {
+              type: "string",
+              description: "Specific evidence — name the DNA value and its measured CAC/CVR effect.",
             },
           },
         },

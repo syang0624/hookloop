@@ -163,12 +163,14 @@ Hard rules:
 - Judge on CAC against the product's target CAC, gated by CVR. A variant with a low CPC but a CVR far below target is a LOSER (it bought garbage clicks) — say so explicitly.
 - Attribution must name specific DNA values and their CAC impact (e.g. "founder voice cut CAC 18%"), never vague phrasing like "the better-performing ads".
 - Report cpcDeltaPct alongside cacDeltaPct so the cheap-click trap is visible when CPC drops but CAC rises.
-- The nextBatchBrief is a concrete directive the Strategist will act on — tell it what to double down on and what to drop.`;
+- The nextBatchBrief is a concrete directive the Strategist will act on — tell it what to double down on and what to drop.
+- For every hypothesis you are given, return a verdict (confirmed / refuted / partial) with specific evidence — this is how the weekly report tells the founder what was right and what was wrong.`;
 
 export function buildAnalystPrompt(input: {
   product: Product;
   variants: Variant[];
   metrics: Metric[];
+  hypotheses: Array<Pick<Hypothesis, "text">>;
 }): AgentMessages {
   const perVariant = input.variants
     .map((variant) => {
@@ -183,14 +185,18 @@ export function buildAnalystPrompt(input: {
       return `- ${variant._id} [${dna}] → spend $${spend.toFixed(0)}, CPC $${cpc.toFixed(2)}, CVR ${(cvr * 100).toFixed(1)}%, CAC ${Number.isFinite(cac) ? "$" + cac.toFixed(0) : "∞"}`;
     })
     .join("\n");
+  const hypothesisList = input.hypotheses.map((h, i) => `${i + 1}. ${h.text}`).join("\n");
   return {
     system: ANALYST_SYSTEM,
     user: `PRODUCT TARGETS
 Target CAC: $${input.product.targetCAC} | Max CPC: $${input.product.maxCPC}
 
+HYPOTHESES TESTED THIS WEEK
+${hypothesisList}
+
 VARIANTS AND RESULTS
 ${perVariant}
 
-Identify winners and losers (cite the CVR floor for any cheap-CPC kill), attribute CAC/CPC deltas to specific DNA values, write the narrative, and produce the next-batch brief.`,
+Identify winners and losers (cite the CVR floor for any cheap-CPC kill), attribute CAC/CPC deltas to specific DNA values, render a verdict on each hypothesis above, write the narrative, and produce the next-batch brief.`,
   };
 }

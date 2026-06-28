@@ -68,6 +68,11 @@ type AnalystResult = {
     cacDeltaPct: number;
     cpcDeltaPct: number;
   }>;
+  hypothesisVerdict: Array<{
+    hypothesis: string;
+    verdict: "confirmed" | "refuted" | "partial";
+    why: string;
+  }>;
   narrative: string;
   nextBatchBrief: string;
 };
@@ -263,8 +268,9 @@ export const runAnalyst = internalAction({
     if (!product) throw new Error(`Analyst: product ${args.productId} not found`);
     const variants = await ctx.runQuery(api.variants.listByBatch, { batchId: args.batchId });
     const metrics = await ctx.runQuery(api.metrics.liveMetrics, { batchId: args.batchId });
+    const hypotheses = await ctx.runQuery(api.hypotheses.listByBatch, { batchId: args.batchId });
 
-    const { system, user } = buildAnalystPrompt({ product, variants, metrics });
+    const { system, user } = buildAnalystPrompt({ product, variants, metrics, hypotheses });
     const result = await callStructured<AnalystResult>(
       ctx,
       args.batchId,
