@@ -8,6 +8,14 @@ A founder gives HookLoop a product, a budget, and a target cost‑per‑acquisit
 
 ---
 
+## Demo video
+
+[![HookLoop demo video](https://img.youtube.com/vi/RyWogQuJ2y4/maxresdefault.jpg)](https://www.youtube.com/watch?v=RyWogQuJ2y4)
+
+Watch the demo: <https://www.youtube.com/watch?v=RyWogQuJ2y4>
+
+---
+
 ## The loop
 
 1. **Input** — product, budget, past creative, and a **target CAC** (CAC is primary; cheap clicks are a trap).
